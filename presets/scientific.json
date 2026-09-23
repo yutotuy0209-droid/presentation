@@ -1,0 +1,14 @@
+{
+  "name": "scientific",
+  "purpose": "Technical or scientific presentation",
+  "story": ["background", "problem", "method", "result", "discussion", "next_step"],
+  "priorities": {
+    "figures_over_text": true,
+    "show_units": true,
+    "show_conditions": true,
+    "separate_result_and_interpretation": true
+  },
+  "density": "medium",
+  "equations": "preserve_semantics",
+  "notes": "Use for research explanations, technical meetings, and experiment reports."
+}
