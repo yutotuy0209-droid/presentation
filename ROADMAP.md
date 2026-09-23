@@ -1,60 +1,67 @@
 # ROADMAP
 
-候補を消さずに残すための設計メモ。実装済み・未実装を混同しないことを優先する。
-
-## Core architecture
+候補を消さずに残す設計メモ。HTMLを正本にせず、PowerPointのnative geometryに近い共通IRを中心にする。
 
 ```text
-PPTX ─┐
-HTML ─┼─> common slide IR (JSON) ─> PPTX / HTML / SVG
-MD   ─┘               │
-                      ├─> lint / QA
-human-edited PPTX ────┴─> diff ─> experience
+                    ┌──────────── PPTX
+                    │               ↑↓
+source/generator ↔ Slide IR (EMU) ← human-edited PPTX
+                    │
+                    ├─ SVG
+                    ├─ PNG
+                    └─ HTML (preview/helper only)
 ```
 
-共通IRを中心にし、PPTXとHTMLを完全同一にするのではなく、意味・位置・サイズ・スタイルを可能な範囲で往復可能にする。
+## Equality
 
-## Candidate backlog
+1. Semantic equal: 内容・意味が同じ
+2. Structural equal: shape種類・個数・順序が同じ
+3. Geometry/visual equal: x/y/width/height等が許容差内
 
-- [ ] P01 PPTX → common JSON
-- [ ] P02 common JSON → PPTX
-- [ ] P03 HTML → common JSON
-- [ ] P04 common JSON → HTML
-- [ ] P05 PPTX ↔ HTML round trip via IR
-- [ ] P06 AI生成版と人間修正版の差分抽出
-- [ ] P07 修正履歴をJSONL/CSVへ保存
-- [ ] P08 overlap検出
-- [ ] P09 overflow検出
-- [ ] P10 alignment検出
-- [ ] P11 小さすぎる文字の検出
-- [ ] P12 文字密度・情報過多の検出
-- [ ] P13 LaTeX/数式 → SVG
-- [ ] P14 数式変換前後の検査
-- [ ] P15 SVG → PPTX
-- [ ] P16 PPTX → SVG/HTML
-- [ ] P17 Markdown → slides
-- [ ] P18 Marp連携
-- [ ] P19 グラフの自動配置
-- [ ] P20 表の自動配置
-- [ ] P21 before/after visual comparison
-- [ ] P22 slide linter
-- [x] P23 scientific preset
-- [x] P24 research-progress preset
-- [ ] P25 thesis-defense preset
-- [ ] P26 business preset
-- [ ] P27 poster preset
-- [ ] P28 人間修正履歴からpreset改善候補を生成
-- [ ] P29 PPTX全ページの画像化
-- [ ] P30 visual regression
+未対応要素は黙って近似せず unsupported / approximate / rasterized としてreportする。
+
+## Status
+
+- [x] PPTX → common IR v2 (EMU)
+- [~] common IR → PPTX: editable text shapeから開始
+- [x] HTML → helper IR: 主経路ではない
+- [x] IR before/after diff foundation
+- [x] 修正履歴JSONL foundation
+- [x] overlap / overflow / tiny-text / text-density lint foundation
+- [x] semantic / structural / geometry comparison foundation
+- [x] round-trip fidelity harness
+- [ ] picture/media lossless round trip
+- [ ] groups/connectors
+- [ ] tables/charts
+- [ ] theme/master inheritance
+- [ ] native equations + equation meaning checks
+- [ ] SVG → editable/faithful PPTX handling
+- [ ] PPTX render screenshots + visual regression
+- [ ] repeated human corrections → preset suggestions
+- [ ] thesis-defense / business / poster presets
+
+## Round-trip
+
+```bash
+python src/pptx_to_ir.py original.pptx --out original.json
+node src/ir_to_pptx.js original.json rebuilt.pptx generation-report.json
+python src/pptx_to_ir.py rebuilt.pptx --out rebuilt.json
+python src/compare_ir.py original.json rebuilt.json --out comparison.json
+
+# 一括
+python src/roundtrip_test.py original.pptx --work output/roundtrip
+```
+
+Current limitation: readerはcommon shapes/text/picture・graphic frame metadataとnative EMU geometryを抽出する。writerはまずeditable text shapeを再構築する段階。pictures, groups, tables/charts, connectors, theme inheritance, native equationsは専用handlerが必要。
 
 ## Experience loop
 
-人間によるPowerPoint上の修正を失敗扱いにしない。生成前後の差分を保存し、繰り返される修正だけを将来のpreset/skill候補にする。
+AI生成 → PPTX → 人間修正 → PPTX再解析 → IR差分 → experience。
 
-特に数式は完全自動化を前提にせず、意味保存 → 視覚品質 → 編集性の順で扱う。
+繰り返される人間修正だけをpreset/skill候補にする。
 
-## Non-goals for now
+## Non-goals
 
-- PowerPointそのものを置き換えること
-- すべての変換を完全可逆にすること
-- 人間の最終確認をなくすこと
+- HTML/CSSをPowerPointの正本にする
+- 未対応PowerPoint機能を完全可逆と偽る
+- 人間の最終確認をなくす
