@@ -1,0 +1,12 @@
+{
+  "name": "story-driven",
+  "purpose": "Explain a topic with a clear narrative arc",
+  "story": ["context", "tension_or_question", "approach", "evidence", "meaning", "takeaway"],
+  "priorities": {
+    "reader_question_per_section": true,
+    "visual_transition": true,
+    "avoid_forced_kishotenketsu": true
+  },
+  "density": "low",
+  "notes": "Use narrative structure only when it improves comprehension; do not force a literary pattern onto technical evidence."
+}
