@@ -1,0 +1,12 @@
+{
+  "name": "research-progress",
+  "purpose": "Short recurring research progress report",
+  "story": ["objective", "what_changed", "experiment_or_implementation", "result", "issue", "next_action"],
+  "priorities": {
+    "delta_from_last_time": true,
+    "evidence_first": true,
+    "one_message_per_slide": true
+  },
+  "density": "low",
+  "notes": "Prefer concrete changes and results over repeating background."
+}
