@@ -1,0 +1,14 @@
+{
+  "name": "presentation-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reusable presentation generation utilities extracted from graduation-research-motion-analysis.",
+  "scripts": {
+    "test:render": "node tests/test_puppeteer.js",
+    "build:html": "node src/html_to_pptx.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1",
+    "puppeteer-core": "^25.8.0"
+  }
+}
