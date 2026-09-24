@@ -24,6 +24,33 @@ async function irToPptx(deck, outputFile){
           bold:!!first.bold,italic:!!first.italic,
           breakLine:false,
         });
+      } else if(el.table && el.table.rows && el.table.rows.length){
+        const rows = el.table.rows.map(r => r.cells.map(c => {
+          const first = c.runs?.find(run => run.text) || {};
+          return {
+            text: c.text || '',
+            options: {
+              fontFace: first.fontFamily || 'Yu Gothic',
+              fontSize: first.fontSizePt || 14,
+              bold: !!first.bold,
+              italic: !!first.italic,
+              colspan: c.gridSpan > 1 ? c.gridSpan : undefined,
+              rowspan: c.rowSpan > 1 ? c.rowSpan : undefined,
+              align: 'center',
+              valign: 'middle',
+            }
+          };
+        }));
+        const colW = (el.table.colWidths && el.table.colWidths.length > 0)
+          ? el.table.colWidths.map(w => inch(w))
+          : undefined;
+        slide.addTable(rows, {
+          x: box.x, y: box.y, w: box.w, h: box.h,
+          colW: colW,
+          border: { type: 'solid', pt: 1, color: 'CBD5E1' },
+          fill: { color: 'FFFFFF' },
+          margin: [2, 3, 2, 3],
+        });
       } else {
         unsupported.push({slide:s.id,element:el.id,name:el.name,type:el.type,reason:'not-yet-lossless'});
       }

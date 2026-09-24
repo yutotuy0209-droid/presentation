@@ -54,6 +54,26 @@ def text_info(node):
         paras.append("".join(parts))
     return "\n".join(paras),runs
 
+def table_info(node):
+    tbl = node.find(".//a:tbl", NS)
+    if tbl is None: return None
+    grid = tbl.findall(".//a:gridCol", NS)
+    col_widths = [int(c.get("w", "0")) for c in grid]
+    rows = []
+    for tr in tbl.findall("a:tr", NS):
+        h = int(tr.get("h", "0"))
+        cells = []
+        for tc in tr.findall("a:tc", NS):
+            text, runs = text_info(tc)
+            cells.append({
+                "text": text,
+                "runs": runs,
+                "gridSpan": int(tc.get("gridSpan", "1")),
+                "rowSpan": int(tc.get("rowSpan", "1")),
+            })
+        rows.append({"height": h, "cells": cells})
+    return {"colWidths": col_widths, "rows": rows}
+
 def rels(z, slide_no):
     name=f"ppt/slides/_rels/slide{slide_no}.xml.rels"
     if name not in z.namelist(): return {}
@@ -82,7 +102,10 @@ def parse_pptx(path:Path):
                     name=nv.get("name") if nv is not None else local
                     g=geometry(node); text,runs=text_info(node)
                     el={"id":eid,"name":name,"type":local,"z":zi,**g,"text":text,"runs":runs}
-                    if local=="pic":
+                    if local=="graphicFrame":
+                        tbl=table_info(node)
+                        if tbl: el["table"]=tbl
+                    elif local=="pic":
                         blip=node.find(".//a:blip",NS)
                         rid=blip.get(q("r","embed")) if blip is not None else None
                         if rid: el["mediaTarget"]=relationship.get(rid)
