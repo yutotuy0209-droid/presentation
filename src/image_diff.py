@@ -5,11 +5,20 @@ Uses Pillow when installed. If Pillow is unavailable, reports that visual
 comparison is unavailable without failing structural round-trip tests.
 """
 from __future__ import annotations
-import json,sys
+import json, sys
 from pathlib import Path
 
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 def main():
-    a,b=map(Path,sys.argv[1:3])
+    if len(sys.argv) < 3 or "--help" in sys.argv or "-h" in sys.argv:
+        print("Usage: image_diff.py <dir_a> <dir_b>")
+        return
+    a, b = map(Path, sys.argv[1:3])
     try:
         from PIL import Image,ImageChops,ImageStat
     except Exception:
