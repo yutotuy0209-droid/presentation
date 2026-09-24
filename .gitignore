@@ -4,3 +4,5 @@ temp/
 *.log
 .DS_Store
 Thumbs.db
+
+.ai-history/

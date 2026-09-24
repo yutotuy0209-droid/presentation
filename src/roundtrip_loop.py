@@ -17,9 +17,14 @@ import argparse, json, shutil, subprocess, sys, time
 from pathlib import Path
 
 HERE=Path(__file__).resolve().parent
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
 def run(cmd):
-    p=subprocess.run(cmd,text=True,capture_output=True)
+    p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if p.returncode:
         raise RuntimeError(f"command failed: {cmd}\nSTDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}")
     return p.stdout.strip()
