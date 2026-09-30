@@ -990,6 +990,51 @@ def build_pptx(ir_path: Path, pptx_path: Path) -> None:
     subprocess.run(cmd, cwd=repo_root, check=True)
 
 
+def run_ir_lint(ir_path: Path) -> tuple[int, str]:
+    """Run the repository's common IR lint as the second safety gate."""
+    repo_root = Path(__file__).resolve().parent.parent
+    lint = repo_root / "src" / "lint_ir.js"
+    proc = subprocess.run(
+        ["node", str(lint), str(ir_path)],
+        cwd=repo_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    lint_report = ir_path.with_suffix(".lint.json")
+    lint_report.write_text(proc.stdout or "[]", encoding="utf-8")
+    if proc.stderr:
+        sys.stderr.write(proc.stderr)
+    return proc.returncode, str(lint_report)
+
+
+def render_with_powerpoint(pptx_path: Path, output_dir: Path) -> None:
+    """Optional Windows/PowerPoint render for final visual inspection."""
+    repo_root = Path(__file__).resolve().parent.parent
+    renderer = repo_root / "src" / "render_pptx_powerpoint.ps1"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    candidates = ["pwsh", "powershell"]
+    last_error: Exception | None = None
+    for shell in candidates:
+        try:
+            subprocess.run(
+                [
+                    shell,
+                    "-NoProfile",
+                    "-ExecutionPolicy", "Bypass",
+                    "-File", str(renderer),
+                    "-InputPptx", str(pptx_path),
+                    "-OutputDir", str(output_dir),
+                ],
+                cwd=repo_root,
+                check=True,
+            )
+            return
+        except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+            last_error = exc
+    raise RuntimeError(f"PowerPoint render failed: {last_error}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="1px単位のPowerPoint自動レイアウトエンジン"
@@ -1002,6 +1047,16 @@ def main() -> int:
     build.add_argument("--pptx", type=Path)
     build.add_argument("--report", type=Path)
     build.add_argument("--strict", action="store_true")
+    build.add_argument(
+        "--skip-lint",
+        action="store_true",
+        help="共通IR lintを省略する（通常は非推奨）",
+    )
+    build.add_argument(
+        "--render-dir",
+        type=Path,
+        help="Windows + PowerPoint環境で最終PNGレンダリングする出力先",
+    )
 
     args = ap.parse_args()
 
@@ -1039,10 +1094,30 @@ def main() -> int:
         if args.strict and report["errors"]:
             return 1
 
+        if not args.skip_lint:
+            lint_code, lint_report = run_ir_lint(args.out_ir)
+            print(f"[pixel-layout] lint: {lint_report}")
+            if lint_code != 0:
+                print("[pixel-layout] ERROR: common IR lint failed", file=sys.stderr)
+                return 1
+
         if args.pptx:
             args.pptx.parent.mkdir(parents=True, exist_ok=True)
             build_pptx(args.out_ir, args.pptx)
             print(f"[pixel-layout] PPTX: {args.pptx}")
+
+            if args.render_dir:
+                try:
+                    render_with_powerpoint(args.pptx, args.render_dir)
+                    print(f"[pixel-layout] rendered PNGs: {args.render_dir}")
+                except RuntimeError as exc:
+                    print(f"[pixel-layout] render warning: {exc}", file=sys.stderr)
+                    if args.strict:
+                        return 1
+        elif args.render_dir:
+            print("ERROR: --render-dir requires --pptx", file=sys.stderr)
+            return 2
+
         return 0
 
     return 2
