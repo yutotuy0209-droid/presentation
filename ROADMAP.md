@@ -28,6 +28,7 @@ source/generator ↔ Slide IR (EMU) ← human-edited PPTX
 - [x] IR before/after diff foundation
 - [x] 修正履歴JSONL foundation
 - [x] overlap / overflow / tiny-text / text-density lint foundation
+- [x] deterministic 1px layout engine (compact JSON -> IR -> lint -> PPTX)
 - [x] semantic / structural / geometry comparison foundation
 - [x] round-trip fidelity harness
 - [ ] picture/media lossless round trip

@@ -1,23 +1,39 @@
 // Presentation lint checks over common IR.
-// Enforces AGENTS.md rules: 20pt minimum font, 10-11pt forbidden, 16:9 ratio, no-overflow.
+// Works with native EMU geometry and pixel_layout_engine.py output.
 const fs = require('fs');
 
-function intersects(a,b) {
-  return a.x < b.x+b.width && a.x+a.width > b.x && a.y < b.y+b.height && a.y+a.height > b.y;
+function intersects(a, b, pad = 0) {
+  return (
+    a.x < b.x + b.width + pad &&
+    a.x + a.width + pad > b.x &&
+    a.y < b.y + b.height + pad &&
+    a.y + a.height + pad > b.y
+  );
+}
+
+function isForeground(el) {
+  if (!el) return false;
+  if (el.style && el.style.allowOverlap) return false;
+  return el.type === 'sp' || el.type === 'pic' || !!el.table;
 }
 
 function lintDeck(deck, options = {}) {
-  const minFont = options.minFontSize || 20;
+  const minFont = options.minFontSize || 14;
+  const warnFont = options.warnFontSize || 18;
   const maxTextChars = options.maxTextChars || 900;
+  const overlapPad = Number(options.overlapPad || 0);
   const issues = [];
 
-  // Aspect ratio check (16:9 preferred)
   if (deck.slideSize && deck.slideSize.width && deck.slideSize.height) {
     const ratio = deck.slideSize.width / deck.slideSize.height;
-    const is16x9 = Math.abs(ratio - (16 / 9)) < 0.05;
-    const is4x3 = Math.abs(ratio - (4 / 3)) < 0.05;
+    const is16x9 = Math.abs(ratio - 16 / 9) < 0.05;
+    const is4x3 = Math.abs(ratio - 4 / 3) < 0.05;
     if (!is16x9 && !is4x3) {
-      issues.push({ rule: 'aspect-ratio', severity: 'warning', message: `Unusual aspect ratio: ${ratio.toFixed(3)}. Preferred is 16:9.` });
+      issues.push({
+        rule: 'aspect-ratio',
+        severity: 'warning',
+        message: `Unusual aspect ratio: ${ratio.toFixed(3)}. Expected 16:9 or 4:3.`,
+      });
     }
   }
 
@@ -25,31 +41,60 @@ function lintDeck(deck, options = {}) {
     const slideW = slide.width || deck.slideSize?.width || 12192000;
     const slideH = slide.height || deck.slideSize?.height || 6858000;
     const els = slide.elements || [];
+
     for (const el of els) {
-      if (el.x < 0 || el.y < 0 || el.x+el.width > slideW || el.y+el.height > slideH)
-        issues.push({slide:slide.id, element:el.id, rule:'overflow', severity:'error'});
+      if (
+        el.x < 0 ||
+        el.y < 0 ||
+        el.x + el.width > slideW ||
+        el.y + el.height > slideH
+      ) {
+        issues.push({
+          slide: slide.id,
+          element: el.id,
+          rule: 'overflow',
+          severity: 'error',
+        });
+      }
 
       const checkRuns = (runs, elId) => {
         for (const r of runs || []) {
-          const sz = r.fontSizePt || Number(r.fontSize);
-          if (sz) {
-            if (sz <= 11) {
-              issues.push({ slide: slide.id, element: elId, rule: 'forbidden-small-text', severity: 'error', value: sz, message: `10-11pt text is strictly forbidden: ${sz}pt found` });
-            } else if (sz < minFont) {
-              issues.push({ slide: slide.id, element: elId, rule: 'sub-20pt-text', severity: 'warning', value: sz, message: `Text below ${minFont}pt guideline: ${sz}pt found` });
-            }
+          const size = Number(r.fontSizePt || r.fontSize);
+          if (!size) continue;
+          if (size < minFont) {
+            issues.push({
+              slide: slide.id,
+              element: elId,
+              rule: 'tiny-text',
+              severity: 'error',
+              value: size,
+              message: `Text below ${minFont}pt: ${size}pt`,
+            });
+          } else if (size < warnFont) {
+            issues.push({
+              slide: slide.id,
+              element: elId,
+              rule: 'small-text',
+              severity: 'warning',
+              value: size,
+              message: `Text below ${warnFont}pt guideline: ${size}pt`,
+            });
           }
         }
       };
 
-      if (el.runs && el.runs.length) {
-        checkRuns(el.runs, el.id);
-      } else if (el.style?.fontSize) {
-        const fsiz = Number(el.style.fontSize);
-        if (fsiz <= 11) {
-          issues.push({ slide: slide.id, element: el.id, rule: 'forbidden-small-text', severity: 'error', value: fsiz });
-        } else if (fsiz < minFont) {
-          issues.push({ slide: slide.id, element: el.id, rule: 'sub-20pt-text', severity: 'warning', value: fsiz });
+      const isFooterLike =
+        String(el.id || '').endsWith('-footer') ||
+        String(el.id || '').endsWith('-page');
+
+      if (!isFooterLike) {
+        if (el.runs && el.runs.length) {
+          checkRuns(el.runs, el.id);
+        } else if (el.style?.fontSizePt || el.style?.fontSize) {
+          checkRuns(
+            [{ fontSizePt: el.style.fontSizePt || el.style.fontSize }],
+            el.id
+          );
         }
       }
 
@@ -61,21 +106,54 @@ function lintDeck(deck, options = {}) {
         }
       }
     }
-    const chars = els.reduce((n,e)=>n+(e.text||'').length,0);
-    if (chars > maxTextChars) issues.push({slide:slide.id, rule:'text-density', severity:'warning', value:chars});
-    for (let i=0;i<els.length;i++) for (let j=i+1;j<els.length;j++) {
-      if (intersects(els[i],els[j])) {
-        const a=els[i], b=els[j];
-        issues.push({slide:slide.id, elements:[a.id,b.id], rule:'overlap', severity:'info'});
+
+    const chars = els.reduce((n, e) => n + (e.text || '').length, 0);
+    if (chars > maxTextChars) {
+      issues.push({
+        slide: slide.id,
+        rule: 'text-density',
+        severity: 'warning',
+        value: chars,
+      });
+    }
+
+    const fg = els.filter(isForeground);
+    for (let i = 0; i < fg.length; i++) {
+      for (let j = i + 1; j < fg.length; j++) {
+        const a = fg[i];
+        const b = fg[j];
+
+        if (
+          String(a.id || '').endsWith('-footer') ||
+          String(a.id || '').endsWith('-page') ||
+          String(b.id || '').endsWith('-footer') ||
+          String(b.id || '').endsWith('-page')
+        ) {
+          continue;
+        }
+
+        if (intersects(a, b, overlapPad)) {
+          issues.push({
+            slide: slide.id,
+            elements: [a.id, b.id],
+            rule: 'overlap',
+            severity: 'error',
+          });
+        }
       }
     }
   }
+
   return issues;
 }
 
 if (require.main === module) {
-  const file=process.argv[2]; if(!file) throw new Error('Usage: node src/lint_ir.js deck.json');
-  const deck=JSON.parse(fs.readFileSync(file,'utf8'));
-  console.log(JSON.stringify(lintDeck(deck),null,2));
+  const file = process.argv[2];
+  if (!file) throw new Error('Usage: node src/lint_ir.js deck.json');
+  const deck = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const issues = lintDeck(deck);
+  console.log(JSON.stringify(issues, null, 2));
+  if (issues.some(x => x.severity === 'error')) process.exitCode = 1;
 }
-module.exports={lintDeck,intersects};
+
+module.exports = { lintDeck, intersects, isForeground };

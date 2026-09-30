@@ -1,0 +1,35 @@
+name: Pixel Layout Engine CI
+
+on:
+  push:
+    branches:
+      - "feat/pixel-layout-engine-*"
+  pull_request:
+    paths:
+      - "src/pixel_layout_engine.py"
+      - "src/ir_to_pptx.js"
+      - "src/lint_ir.js"
+      - "tests/test_pixel_layout_engine.py"
+      - "examples/pixel_deck_4x3.json"
+      - "package.json"
+      - ".github/workflows/pixel-layout-engine.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+      - run: python tests/test_pixel_layout_engine.py
+      - run: npm run build:pixel
+      - run: node src/lint_ir.js output/pixel_deck_4x3.json
