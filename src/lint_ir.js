@@ -83,13 +83,19 @@ function lintDeck(deck, options = {}) {
         }
       };
 
-      if (el.runs && el.runs.length) {
-        checkRuns(el.runs, el.id);
-      } else if (el.style?.fontSizePt || el.style?.fontSize) {
-        checkRuns(
-          [{ fontSizePt: el.style.fontSizePt || el.style.fontSize }],
-          el.id
-        );
+      const isFooterLike =
+        String(el.id || '').endsWith('-footer') ||
+        String(el.id || '').endsWith('-page');
+
+      if (!isFooterLike) {
+        if (el.runs && el.runs.length) {
+          checkRuns(el.runs, el.id);
+        } else if (el.style?.fontSizePt || el.style?.fontSize) {
+          checkRuns(
+            [{ fontSizePt: el.style.fontSizePt || el.style.fontSize }],
+            el.id
+          );
+        }
       }
 
       if (el.table && el.table.rows) {
