@@ -67,3 +67,63 @@ node src/html_to_pptx.js output/result.pptx slide1.html slide2.html
 ## Origin
 
 汎用処理は `graduation-research-motion-analysis` 内で作成したプレゼン生成コードを基にしています。研究固有の内容はこのリポジトリにはコピーしません。
+
+
+## Pixel Layout Engine
+
+AIがPowerPointの座標・文字サイズ・余白を毎回考えなくてもよいように、`src/pixel_layout_engine.py` を用意しています。
+
+### 最小入力
+
+```json
+{
+  "canvas": {"preset": "4:3"},
+  "slides": [
+    {
+      "title": "研究背景と目的",
+      "bullets": [
+        "熱変位が加工精度へ影響する",
+        "外付け画像計測でX・Y・Z変位を測定する"
+      ]
+    }
+  ]
+}
+```
+
+### 生成
+
+```bash
+python src/pixel_layout_engine.py build input.json \
+  --out-ir output/deck.json \
+  --pptx output/deck.pptx \
+  --strict
+```
+
+Windows + PowerPoint環境では最終レンダリングまで1コマンドで実行できます。
+
+```powershell
+python src/pixel_layout_engine.py build input.json `
+  --out-ir output/deck.json `
+  --pptx output/deck.pptx `
+  --render-dir output/rendered `
+  --strict
+```
+
+エンジンが自動で行うこと:
+
+- 4:3 / 16:9のcanvas設定
+- 1px単位の座標処理
+- px → PowerPoint native EMU変換
+- 本文の高さ推定
+- 文字サイズの自動縮小
+- 長文の自動改ページ
+- foreground要素の衝突回避
+- スライド外へのはみ出し防止
+- 画像の縦横比維持
+- 表の高さ推定
+- ページ番号とフッター
+- common IR lint
+- PPTX生成
+- 任意でPowerPoint本体によるPNGレンダリング
+
+詳細は `docs/PIXEL_LAYOUT_ENGINE.md` を参照してください。
