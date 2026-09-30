@@ -620,8 +620,39 @@ class DeckCompiler:
     def compile_slide_spec(self, slide_spec: dict[str, Any], ordinal: int) -> None:
         base_id = str(slide_spec.get("id") or f"slide-{ordinal}")
         title = str(slide_spec.get("title") or "")
-        layout = str(slide_spec.get("layout") or "title-body")
-        blocks = [normalize_block(b) for b in (slide_spec.get("blocks") or [])]
+
+        # Token節約用shorthand:
+        # AIは blocks を細かく書かなくても body / bullets / image / table だけでよい。
+        raw_blocks = slide_spec.get("blocks")
+        if raw_blocks is None:
+            raw_blocks = []
+            if slide_spec.get("body"):
+                raw_blocks.append({"type": "text", "text": str(slide_spec["body"])})
+            if slide_spec.get("bullets"):
+                bullet_text = "\n".join(f"• {x}" for x in slide_spec["bullets"])
+                raw_blocks.append({"type": "text", "text": bullet_text})
+            if slide_spec.get("image"):
+                image_value = slide_spec["image"]
+                if isinstance(image_value, dict):
+                    raw_blocks.append({"type": "image", **image_value})
+                else:
+                    raw_blocks.append({"type": "image", "path": str(image_value)})
+            if slide_spec.get("table"):
+                raw_blocks.append({"type": "table", "rows": slide_spec["table"]})
+
+        blocks = [normalize_block(b) for b in raw_blocks]
+        requested_layout = slide_spec.get("layout")
+        if not requested_layout or str(requested_layout).lower() == "auto":
+            has_image = any(str(b.get("type", "")).lower() == "image" for b in blocks)
+            has_text = any(str(b.get("type", "text")).lower() in {"text", "bullets", "callout", "metric"} for b in blocks)
+            if int(slide_spec.get("columns", 1)) == 2:
+                layout = "two-column"
+            elif has_image and has_text:
+                layout = "image-right"
+            else:
+                layout = "title-body"
+        else:
+            layout = str(requested_layout)
 
         slide_index = 1
         slide = self._new_slide(base_id, title, layout, continuation=False)
@@ -641,6 +672,30 @@ class DeckCompiler:
 
         for block_index, block in enumerate(blocks):
             btype = str(block.get("type", "text")).lower()
+
+            # Semantic blocks are compiled down to normal text so AI does not
+            # need to micromanage typography/geometry.
+            if btype == "bullets":
+                items = block.get("items") or block.get("bullets") or []
+                block["text"] = "\n".join(f"• {x}" for x in items)
+                btype = "text"
+            elif btype == "callout":
+                block["style"] = deep_merge(
+                    {"bold": True, "color": self.theme["accentColor"]},
+                    block.get("style"),
+                )
+                btype = "text"
+            elif btype == "metric":
+                label = str(block.get("label") or "")
+                value = str(block.get("value") or "")
+                block["text"] = f"{value}\n{label}".strip()
+                block["fontSizePt"] = block.get("fontSizePt", max(26, self.theme["bodySizePt"] + 6))
+                block["style"] = deep_merge(
+                    {"bold": True, "color": self.theme["accentColor"], "align": "center"},
+                    block.get("style"),
+                )
+                btype = "text"
+
             if btype == "spacer":
                 slot = choose_slot(layout, block, block_index)
                 cursors[slot] += int(block.get("height", self.theme["blockGapPx"]))
