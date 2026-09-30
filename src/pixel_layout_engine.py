@@ -335,17 +335,88 @@ class CollisionMap:
         self.items.append((element_id, rect))
 
     def place_nearest(self, element_id: str, preferred: Rect, zone: Rect) -> Rect:
+        return self.place_controlled(
+            element_id, preferred, zone, mode="flow", max_nudge_px=None
+        )
+
+    def place_controlled(
+        self,
+        element_id: str,
+        preferred: Rect,
+        zone: Rect,
+        *,
+        mode: str = "flow",
+        max_nudge_px: int | None = None,
+        axis: str = "both",
+        allow_overlap: bool = False,
+    ) -> Rect:
+        """
+        Hybrid placement.
+
+        fixed:
+            x/y/w/h are authoritative. Never move the object.
+            Collision or out-of-zone placement is an error.
+        prefer:
+            x/y are a design intent. Search around the requested position by 1px,
+            but never farther than max_nudge_px.
+        flow:
+            current automatic behavior. Search the semantic zone until free.
+        """
+        mode = str(mode or "flow").lower()
+        axis = str(axis or "both").lower()
+        if mode not in {"fixed", "prefer", "flow"}:
+            raise LayoutError(f"{element_id}: unknown placement mode '{mode}'")
+        if axis not in {"x", "y", "both"}:
+            raise LayoutError(f"{element_id}: unknown nudge axis '{axis}'")
+
+        if preferred.w <= 0 or preferred.h <= 0:
+            raise LayoutError(f"{element_id}: invalid size {preferred.w}x{preferred.h}px")
+
+        if mode == "fixed":
+            if not preferred.inside(zone):
+                raise LayoutError(
+                    f"{element_id}: fixed box {preferred} is outside region {zone}"
+                )
+            hits = self.colliders(preferred)
+            if hits and not allow_overlap:
+                raise LayoutError(
+                    f"{element_id}: fixed box overlaps {[eid for eid, _ in hits]}"
+                )
+            self.add(element_id, preferred)
+            return preferred
+
+        # prefer/flow may clamp to the allowed semantic region.
         preferred = Rect(
             clamp(preferred.x, zone.x, max(zone.x, zone.right - preferred.w)),
             clamp(preferred.y, zone.y, max(zone.y, zone.bottom - preferred.h)),
             preferred.w,
             preferred.h,
         )
-        if self.is_free(preferred):
+        if self.is_free(preferred) or allow_overlap:
             self.add(element_id, preferred)
             return preferred
 
-        # First: preserve x and move down exactly one pixel at a time.
+        if mode == "prefer":
+            radius = max(0, int(max_nudge_px if max_nudge_px is not None else 24))
+            for d in range(1, radius + 1):
+                offsets: list[tuple[int, int]] = []
+                if axis in {"y", "both"}:
+                    offsets.extend([(0, d), (0, -d)])
+                if axis in {"x", "both"}:
+                    offsets.extend([(d, 0), (-d, 0)])
+                if axis == "both":
+                    offsets.extend([(d, d), (-d, d), (d, -d), (-d, -d)])
+
+                for dx, dy in offsets:
+                    cand = Rect(preferred.x + dx, preferred.y + dy, preferred.w, preferred.h)
+                    if cand.inside(zone) and self.is_free(cand):
+                        self.add(element_id, cand)
+                        return cand
+            raise LayoutError(
+                f"{element_id}: preferred position cannot be resolved within {radius}px"
+            )
+
+        # flow: first preserve x and move downward exactly one pixel at a time.
         max_y = zone.bottom - preferred.h
         for y in range(preferred.y + 1, max_y + 1):
             cand = Rect(preferred.x, y, preferred.w, preferred.h)
@@ -353,7 +424,7 @@ class CollisionMap:
                 self.add(element_id, cand)
                 return cand
 
-        # Second: exhaustive 1px scan inside the semantic zone.
+        # Then exhaustive 1px scan inside the semantic zone.
         max_x = zone.right - preferred.w
         for y in range(zone.y, max_y + 1):
             for x in range(zone.x, max_x + 1):
@@ -439,7 +510,7 @@ def normalize_block(block: Any) -> dict[str, Any]:
 
 def choose_slot(layout: str, block: dict[str, Any], index: int) -> str:
     explicit = block.get("slot")
-    if explicit in {"left", "right", "content"}:
+    if isinstance(explicit, str) and explicit:
         return explicit
     if layout == "image-left":
         return "left" if block.get("type") == "image" else "right"
@@ -448,6 +519,43 @@ def choose_slot(layout: str, block: dict[str, Any], index: int) -> str:
     if layout == "two-column":
         return "left" if index % 2 == 0 else "right"
     return "content"
+
+
+def rect_from_mapping(
+    data: dict[str, Any] | None,
+    fallback: Rect,
+) -> Rect:
+    data = data or {}
+    return Rect(
+        int(data.get("x", fallback.x)),
+        int(data.get("y", fallback.y)),
+        int(data.get("w", data.get("width", fallback.w))),
+        int(data.get("h", data.get("height", fallback.h))),
+    )
+
+
+def block_position(block: dict[str, Any]) -> dict[str, Any]:
+    """
+    Read either the compact top-level x/y/width/height form or
+    position: {x,y,w,h,mode,maxNudgePx,axis}.
+    """
+    pos = dict(block.get("position") or {})
+    for key in ("x", "y", "width", "height", "w", "h"):
+        if key in block and key not in pos:
+            pos[key] = block[key]
+    if "placement" in block and "mode" not in pos:
+        pos["mode"] = block["placement"]
+    return pos
+
+
+def placement_options(block: dict[str, Any]) -> dict[str, Any]:
+    pos = block_position(block)
+    return {
+        "mode": str(pos.get("mode", "flow")).lower(),
+        "max_nudge_px": int(pos.get("maxNudgePx", pos.get("max_nudge_px", 24))),
+        "axis": str(pos.get("axis", "both")).lower(),
+        "allow_overlap": bool(pos.get("allowOverlap", False)),
+    }
 
 
 def make_text_element(
@@ -544,8 +652,26 @@ class DeckCompiler:
             "warnings": [],
         }
 
-    def _new_slide(self, slide_id: str, title: str, layout: str, continuation: bool = False) -> dict[str, Any]:
+    def _new_slide(
+        self,
+        slide_id: str,
+        title: str,
+        layout: str,
+        slide_spec: dict[str, Any] | None = None,
+        continuation: bool = False,
+    ) -> dict[str, Any]:
+        slide_spec = slide_spec or {}
         zones = layout_zones(self.width, self.height, self.theme, layout)
+
+        # Optional named regions let a human/AI control composition without
+        # micromanaging every object coordinate.
+        for region_name, raw in (slide_spec.get("regions") or {}).items():
+            if not isinstance(raw, dict):
+                continue
+            zones[str(region_name)] = rect_from_mapping(raw, zones["content"])
+
+        if isinstance(slide_spec.get("titleBox"), dict):
+            zones["title"] = rect_from_mapping(slide_spec["titleBox"], zones["title"])
         collision = CollisionMap(Rect(0, 0, self.width, self.height), int(self.theme["safePadPx"]))
         slide = {
             "id": slide_id,
@@ -655,7 +781,7 @@ class DeckCompiler:
             layout = str(requested_layout)
 
         slide_index = 1
-        slide = self._new_slide(base_id, title, layout, continuation=False)
+        slide = self._new_slide(base_id, title, layout, slide_spec, continuation=False)
         zones: dict[str, Rect] = slide["_zones"]
         collision: CollisionMap = slide["_collision"]
         cursors: dict[str, int] = slide["_cursor"]
@@ -665,7 +791,7 @@ class DeckCompiler:
             self._push_slide(slide)
             slide_index += 1
             sid = f"{base_id}-cont-{slide_index}"
-            slide = self._new_slide(sid, title, layout, continuation=True)
+            slide = self._new_slide(sid, title, layout, slide_spec, continuation=True)
             zones = slide["_zones"]
             collision = slide["_collision"]
             cursors = slide["_cursor"]
@@ -721,18 +847,32 @@ class DeckCompiler:
                 continue
 
             slot = choose_slot(layout, block, block_index)
+            if slot not in zones:
+                raise LayoutError(
+                    f"{base_id}-b{block_index}: unknown slot/region '{slot}'"
+                )
             zone = zones[slot]
+            if slot not in cursors:
+                cursors[slot] = zone.y
+
             gap = int(block.get("gapAfter", self.theme["blockGapPx"]))
-            width = int(block.get("width", zone.w))
+            pos = block_position(block)
+            width = int(pos.get("w", pos.get("width", block.get("width", zone.w))))
             width = min(width, zone.w)
-            preferred_x = int(block.get("x", zone.x))
-            preferred_y = int(block.get("y", cursors[slot]))
+            preferred_x = int(pos.get("x", block.get("x", zone.x)))
+            preferred_y = int(pos.get("y", block.get("y", cursors[slot])))
+            requested_h = pos.get("h", pos.get("height"))
+            place_opts = placement_options(block)
 
             if btype == "text":
                 text = str(block.get("text") or "")
                 pref = float(block.get("fontSizePt", self.theme["bodySizePt"]))
                 min_pt = float(block.get("minFontSizePt", self.theme["minBodySizePt"]))
-                max_available = zone.bottom - preferred_y
+                max_available = (
+                    int(requested_h)
+                    if requested_h is not None
+                    else zone.bottom - preferred_y
+                )
                 if max_available <= 8:
                     continue_slide()
                     zone = zones[slot]
@@ -772,10 +912,11 @@ class DeckCompiler:
                             current, width, min_pt,
                             float(self.theme["lineHeight"]), self.dpi,
                         )
-                        rect = collision.place_nearest(
+                        rect = collision.place_controlled(
                             f"{base_id}-b{block_index}-p{part}",
                             Rect(preferred_x, preferred_y, width, min(h, max_available)),
                             zone,
+                            mode="flow",
                         )
                         slide["elements"].append(
                             make_text_element(
@@ -801,10 +942,16 @@ class DeckCompiler:
                         part += 1
                     continue
 
-                rect = collision.place_nearest(
+                text_h = (
+                    int(requested_h)
+                    if requested_h is not None and place_opts["mode"] == "fixed"
+                    else need_h
+                )
+                rect = collision.place_controlled(
                     f"{base_id}-b{block_index}",
-                    Rect(preferred_x, preferred_y, width, need_h),
+                    Rect(preferred_x, preferred_y, width, text_h),
                     zone,
+                    **place_opts,
                 )
                 slide["elements"].append(
                     make_text_element(
@@ -829,7 +976,11 @@ class DeckCompiler:
                         "rule": "image-not-found", "path": str(img_path)
                     })
                 max_available = zone.bottom - preferred_y
-                desired_h = int(block.get("height", min(max_available, int(zone.h * 0.58))))
+                desired_h = int(
+                    requested_h
+                    if requested_h is not None
+                    else block.get("height", min(max_available, int(zone.h * 0.58)))
+                )
                 if desired_h <= 8:
                     continue_slide()
                     zone = zones[slot]
@@ -838,8 +989,8 @@ class DeckCompiler:
                     desired_h = int(block.get("height", min(max_available, int(zone.h * 0.58))))
                 target = Rect(preferred_x, preferred_y, width, min(desired_h, max_available))
                 actual = contain_rect(image_size(img_path), target)
-                rect = collision.place_nearest(
-                    f"{base_id}-b{block_index}", actual, zone
+                rect = collision.place_controlled(
+                    f"{base_id}-b{block_index}", actual, zone, **place_opts
                 )
                 slide["elements"].append(
                     element_ir(
@@ -884,10 +1035,16 @@ class DeckCompiler:
                     zone = zones[slot]
                     preferred_y = cursors[slot]
                     max_available = zone.bottom - preferred_y
-                rect = collision.place_nearest(
+                table_h = (
+                    int(requested_h)
+                    if requested_h is not None
+                    else min(desired_h, max_available)
+                )
+                rect = collision.place_controlled(
                     f"{base_id}-b{block_index}",
-                    Rect(preferred_x, preferred_y, width, min(desired_h, max_available)),
+                    Rect(preferred_x, preferred_y, width, table_h),
                     zone,
+                    **place_opts,
                 )
                 slide["elements"].append(
                     element_ir(
