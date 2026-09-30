@@ -947,11 +947,10 @@ class DeckCompiler:
                         part += 1
                     continue
 
-                text_h = (
-                    int(requested_h)
-                    if requested_h is not None and place_opts["mode"] == "fixed"
-                    else need_h
-                )
+                # If the caller supplied h/height, preserve that design box
+                # in both fixed and prefer modes. This keeps coordinate control
+                # meaningful while still allowing prefer-mode nudging.
+                text_h = int(requested_h) if requested_h is not None else need_h
                 rect = collision.place_controlled(
                     f"{base_id}-b{block_index}",
                     Rect(preferred_x, preferred_y, width, text_h),
