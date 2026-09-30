@@ -885,6 +885,11 @@ class DeckCompiler:
                 )
 
                 if not fits:
+                    if place_opts["mode"] == "fixed":
+                        raise LayoutError(
+                            f"{base_id}-b{block_index}: text does not fit fixed "
+                            f"{width}x{max_available}px box even at {min_pt}pt"
+                        )
                     first, rest = split_text_for_height(
                         text, width, max_available, min_pt,
                         float(self.theme["lineHeight"]), self.dpi,
