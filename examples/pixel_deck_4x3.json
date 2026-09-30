@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "title": "研究進捗報告",
+    "author": "presentation-toolkit"
+  },
+  "canvas": {
+    "preset": "4:3",
+    "dpi": 96
+  },
+  "theme": {
+    "footerText": "卒業研究",
+    "accentColor": "244B3A",
+    "titleSizePt": 28,
+    "bodySizePt": 20,
+    "minBodySizePt": 14
+  },
+  "slides": [
+    {
+      "id": "background",
+      "layout": "title-body",
+      "title": "研究背景と目的",
+      "blocks": [
+        {
+          "type": "text",
+          "text": "工作機械では熱変位が加工精度へ影響する。\\n本研究では、既存設備へ外付けしやすい画像計測系で X・Y・Z の微小変位を測定する仕組みを検討する。"
+        },
+        {
+          "type": "text",
+          "text": "AIは文章内容だけを指定し、位置・文字サイズ・改ページ・衝突回避はPython側で処理する。",
+          "style": {
+            "bold": true,
+            "color": "244B3A"
+          }
+        }
+      ]
+    },
+    {
+      "id": "two-columns",
+      "layout": "two-column",
+      "title": "2カラムも内容だけ指定",
+      "blocks": [
+        {
+          "type": "text",
+          "slot": "left",
+          "text": "左カラム\\n・Step 0: スケール校正\\n・Step 1: 回転中心"
+        },
+        {
+          "type": "text",
+          "slot": "right",
+          "text": "右カラム\\n・Step 2: XY面内変位\\n・Step 3: Z面外変位"
+        },
+        {
+          "type": "table",
+          "slot": "left",
+          "rows": [
+            [
+              "項目",
+              "値"
+            ],
+            [
+              "Scale",
+              "要確認"
+            ],
+            [
+              "Center",
+              "要確認"
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "slot": "right",
+          "text": "長文はボックスへ入るように自動縮小し、それでも入らなければ継続スライドへ自動分割する。"
+        }
+      ]
+    }
+  ]
+}
