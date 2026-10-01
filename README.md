@@ -6,6 +6,8 @@
 
 ## Current scope
 
+- Pythonで任意の非暗号化PPTXを素材・XML・編集用JSONへ展開し、未対応要素を保持して復元する：[PPTX_SOURCE_BUNDLE.md](docs/PPTX_SOURCE_BUNDLE.md)
+
 - HTML / CSS スライドのレンダリング
 - Puppeteer による高解像度 PNG 出力
 - PNG から PowerPoint (PPTX) への変換
