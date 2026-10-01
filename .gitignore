@@ -6,3 +6,5 @@ temp/
 Thumbs.db
 
 .ai-history/
+__pycache__/
+*.py[cod]
