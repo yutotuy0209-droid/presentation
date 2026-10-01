@@ -39,6 +39,7 @@ class BundleTest(unittest.TestCase):
         self.assertEqual(self.manifest['slides'][0]['part'], 'ppt/slides/slide2.xml')
         markdown=(self.bundle/'slides.md').read_text(encoding='utf-8')
         self.assertIn('## Slide 1',markdown)
+        self.assertIn('package/** -text',(self.bundle/'.gitattributes').read_text(encoding='utf-8'))
         self.assertLess(markdown.index('日本語2'),markdown.index('日本語1'))
         out = self.root/'restored.pptx'
         self.assertTrue(pack(self.bundle, out)['byte_exact'])
