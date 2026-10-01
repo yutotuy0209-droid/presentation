@@ -1,6 +1,7 @@
 # 2026-10-01
 
 - GitHubへ素材を保存する際のXML改行変換を防ぐため，bundle内へ.gitattributesを自動出力。CRLF環境でも元部品のハッシュを維持する。
+- 既存OOXMLのCRLFを正常な原本改行として扱うwhitespace属性を付与し，抽出MDの末尾空行だけを整理。原XMLのバイトは変更しない。
 
 - `src/pptx_bundle.py`を追加。既存PPTXを元ZIP・全部品・素材・編集用JSONへ展開し、未編集時はバイト一致で復元する。Pythonとlxmlを使用する。
 - DrawingML文字列の変更とraw XML・素材差替えを対象部品だけへ反映し、表・グループ・図表・数式・アニメーション・未知部品を再生成で消さない。

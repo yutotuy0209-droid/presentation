@@ -133,7 +133,7 @@ def unpack(source, output):
         target.write_bytes(data)
     (output/'deck.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     # OOXML byte hashes must survive Git checkout on CRLF-configured Windows.
-    (output/'.gitattributes').write_text('package/** -text\noriginal.pptx -text\n',encoding='utf-8')
+    (output/'.gitattributes').write_text('package/** -text whitespace=cr-at-eol\noriginal.pptx -text\n',encoding='utf-8')
     lines = ['# PPTXのスライド内容', '', '元PPTX：'+source.name,
              'SHA-256：`'+manifest['original']['sha256']+'`', '',
              'PPTXからの抽出版．スライドの目的・実験結果の意味は推測せず，本文とnotesを記録する．',
@@ -158,7 +158,7 @@ def unpack(source, output):
                     values=[n.text or '' for n in text_nodes(xml(parts[name]))]
                     lines += ['', 'notes：', '', '\n'.join(values), '']
         lines += ['']
-    (output/'slides.md').write_text('\n'.join(lines), encoding='utf-8')
+    (output/'slides.md').write_text('\n'.join(lines).rstrip()+'\n', encoding='utf-8')
     return manifest
 
 
