@@ -120,15 +120,19 @@ class AutoDeckUi(tk.Tk):
             self.output_var.set(path)
 
     def _generate(self) -> None:
-        source = Path(self.source_var.get().strip())
-        output = Path(self.output_var.get().strip())
+        source_text = self.source_var.get().strip()
+        output_text = self.output_var.get().strip()
+        if not source_text:
+            messagebox.showerror("入力", "入力ファイルを指定してください。")
+            return
+        if not output_text:
+            messagebox.showerror("出力", "出力先を指定してください。")
+            return
+        source = Path(source_text)
+        output = Path(output_text)
         if not source.exists():
             messagebox.showerror("入力", "入力ファイルが見つかりません。")
             return
-        if not str(output):
-            messagebox.showerror("出力", "出力先を指定してください。")
-            return
-
         self.generate_button.configure(state=tk.DISABLED)
         self.status_var.set("生成中")
         self._append("---- generate ----\n")
