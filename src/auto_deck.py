@@ -182,8 +182,9 @@ def parse_plain_text(text: str, *, max_bullets: int = 5) -> tuple[str, list[dict
     if not nonempty:
         return "Presentation", [{"title": "概要", "body": "内容がありません。"}]
 
-    deck_title = nonempty[0]
-    body = "\n".join(lines[lines.index(next(line for line in lines if line.strip())) + 1 :]).strip()
+    first_index = next(i for i, line in enumerate(lines) if line.strip())
+    deck_title = lines[first_index].strip()
+    body = "\n".join(lines[first_index + 1 :]).strip()
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
     slides: list[dict[str, Any]] = []
     for idx, paragraph in enumerate(paragraphs or [body or deck_title], start=1):
