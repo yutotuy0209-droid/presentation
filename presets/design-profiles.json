@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "profiles": [
+    {
+      "id": "evidence_first",
+      "label": "Evidence First",
+      "intent": "Evidence and real visuals dominate; decoration is restrained.",
+      "surface": "light",
+      "density": "medium",
+      "exploration_safe": true
+    },
+    {
+      "id": "calm_warm",
+      "label": "Calm Warm",
+      "intent": "Softer warm background for long review sessions without claiming medical benefit.",
+      "surface": "warm-light",
+      "density": "medium",
+      "exploration_safe": true
+    },
+    {
+      "id": "laboratory_blue",
+      "label": "Laboratory Blue",
+      "intent": "Technical blue hierarchy for methods, comparisons and quantitative explanations.",
+      "surface": "cool-light",
+      "density": "medium",
+      "exploration_safe": true
+    },
+    {
+      "id": "soft_graphite",
+      "label": "Soft Graphite",
+      "intent": "Low-saturation neutral presentation that keeps attention on content.",
+      "surface": "neutral-light",
+      "density": "medium",
+      "exploration_safe": true
+    }
+  ],
+  "selection_policy": {
+    "candidate_count": 4,
+    "exploit_slots": 3,
+    "explore_slots": 1,
+    "signals": ["selection_count", "build_count", "recency", "context_match", "human_comfort_feedback"],
+    "do_not_promote_single_choice_to_rule": true
+  }
+}
