@@ -129,3 +129,26 @@ python src/pixel_layout_engine.py build input.json `
 - 任意でPowerPoint本体によるPNGレンダリング
 
 詳細は `docs/PIXEL_LAYOUT_ENGINE.md` を参照してください。
+
+## Auto Deck
+
+Markdown / JSON / TXT から、compact spec → IR → lint → editable PPTX → 任意のPowerPoint実レンダリングまでを1コマンドで実行できます。
+
+```powershell
+python src/auto_deck.py examples/auto_deck_brief.md --output output/report.pptx
+```
+
+Windows + PowerPoint 環境で最終PNG確認まで行う場合:
+
+```powershell
+python src/auto_deck.py examples/auto_deck_brief.md --output output/report.pptx --render
+```
+
+GUI入口:
+
+```powershell
+python src/auto_deck_ui.py
+```
+
+詳細は `skills/auto-deck-pipeline/SKILL.md` を参照してください。
+
