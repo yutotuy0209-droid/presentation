@@ -9,8 +9,6 @@
 ## Evidence
 The source can stay concise while geometry and overflow handling remain inside the layout engine.
 
-![example result](../tests/fixtures/sample.png)
-
 ## Next action
 - Review rendered PNGs
 - Convert repeated corrections into presets
