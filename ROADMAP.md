@@ -39,6 +39,7 @@ source/generator ↔ Slide IR (EMU) ← human-edited PPTX
 - [ ] SVG → editable/faithful PPTX handling
 - [ ] PPTX render screenshots + visual regression
 - [ ] repeated human corrections → preset suggestions
+- [~] human design choices / usage / recency → compact preference summary + 3 exploit / 1 explore candidate review
 - [ ] thesis-defense / business / poster presets
 
 ## Round-trip
