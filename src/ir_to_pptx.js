@@ -69,6 +69,7 @@ async function irToPptx(deck, outputFile) {
 
   const unsupported = [];
   const warnings = [];
+  const animationReservations = [];
 
   for (const s of deck.slides || []) {
     const slide = pptx.addSlide();
@@ -88,6 +89,16 @@ async function irToPptx(deck, outputFile) {
       };
 
       try {
+        if (el.animation) {
+          animationReservations.push({
+            slide: s.id,
+            element: el.id,
+            animation: el.animation,
+            applied: false,
+            backend: 'reserved-for-powerpoint-postprocess',
+          });
+        }
+
         if (el.type === 'sp' && (el.text || el.runs?.length)) {
           slide.addText(el.text || '', textOptions(el, box));
           continue;
@@ -104,6 +115,30 @@ async function irToPptx(deck, outputFile) {
               element: el.id,
               type: el.type,
               reason: 'image-path-missing',
+              path: p,
+            });
+          }
+          continue;
+        }
+
+        if (el.type === 'media') {
+          const src = el.source || {};
+          const p = src.path ? path.resolve(src.path) : null;
+          if (p && fs.existsSync(p)) {
+            slide.addMedia({
+              type: src.mediaType === 'audio' ? 'audio' : 'video',
+              path: p,
+              x: box.x,
+              y: box.y,
+              w: box.w,
+              h: box.h,
+            });
+          } else {
+            warnings.push({
+              slide: s.id,
+              element: el.id,
+              type: el.type,
+              reason: 'media-path-missing',
               path: p,
             });
           }
@@ -199,7 +234,12 @@ async function irToPptx(deck, outputFile) {
 
   fs.mkdirSync(path.dirname(path.resolve(outputFile)), { recursive: true });
   await pptx.writeFile({ fileName: path.resolve(outputFile) });
-  return { output: path.resolve(outputFile), unsupported, warnings };
+  return {
+    output: path.resolve(outputFile),
+    unsupported,
+    warnings,
+    animationReservations,
+  };
 }
 
 async function main() {
