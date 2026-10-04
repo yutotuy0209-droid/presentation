@@ -129,3 +129,53 @@ python src/pixel_layout_engine.py build input.json `
 - 任意でPowerPoint本体によるPNGレンダリング
 
 詳細は `docs/PIXEL_LAYOUT_ENGINE.md` を参照してください。
+
+
+## 2D Grid Deck
+
+PowerPointの配置を毎回AIに座標指定させず、**意味ブロック + 2次元Grid + Design Preset** から生成します。
+
+```json
+{
+  "design": "glanceable-scientific",
+  "slides": [{
+    "title": "入力 → 処理 → 出力",
+    "grid": [["input", "process", "output"]],
+    "blocks": {
+      "input": {"type": "card", "role": "input", "title": "Camera"},
+      "process": {"type": "card", "role": "process", "title": "POC"},
+      "output": {"type": "metric", "role": "output", "value": "10.1 µm", "label": "XY displacement"}
+    },
+    "connectors": [
+      {"from": "input", "to": "process"},
+      {"from": "process", "to": "output"}
+    ]
+  }]
+}
+```
+
+生成:
+
+```bash
+npm run build:grid
+```
+
+対応:
+
+- 1×1 / 左右 / 上下 / 2×2 / span
+- card / metric / image / SVG / GIF / video
+- optional connector
+- design role: input / process / output / human / warning
+- animated GIF
+- video埋め込み
+- native PowerPoint animation用の予約情報
+
+設計詳細: [GRID_DECK_SYSTEM.md](docs/GRID_DECK_SYSTEM.md)
+
+デザインPreset:
+
+- `glanceable-scientific`
+- `glanceable-soft-graphite`
+- `glanceable-warm`
+
+原則は **「一目で構造、数秒で関係、読めば具体」** です。
