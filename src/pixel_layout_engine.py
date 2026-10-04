@@ -606,6 +606,7 @@ def make_text_element(
     dpi: int,
     style_override: dict[str, Any] | None = None,
     z: int = 20,
+    animation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     style = deep_merge(
         {
@@ -628,7 +629,10 @@ def make_text_element(
         "italic": bool(style.get("italic", False)),
         "color": style.get("color", theme["textColor"]),
     }]
-    return element_ir(eid, "sp", rect, dpi, text=text, style=style, runs=runs, z=z)
+    return element_ir(
+        eid, "sp", rect, dpi, text=text, style=style, runs=runs,
+        animation=animation, z=z,
+    )
 
 
 def build_table_ir(rows: list[list[Any]], font_pt: float, theme: dict[str, Any]) -> dict[str, Any]:
@@ -1001,6 +1005,7 @@ class DeckCompiler:
                         f"{base_id}-b{block_index}",
                         text, rect, font_pt, self.theme, self.dpi,
                         block.get("style"), z=int(block.get("z", 20)),
+                        animation=block.get("animation"),
                     )
                 )
                 cursors[slot] = rect.bottom + gap
