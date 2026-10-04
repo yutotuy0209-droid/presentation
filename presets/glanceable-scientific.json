@@ -1,0 +1,92 @@
+{
+  "name": "glanceable-scientific",
+  "purpose": "A glanceable scientific/engineering slide system: structure first, detail second.",
+  "theme": {
+    "fontFamily": "Yu Gothic",
+    "titleFontFamily": "Yu Gothic",
+    "titleSizePt": 30,
+    "bodySizePt": 18,
+    "minBodySizePt": 14,
+    "captionSizePt": 13,
+    "footerSizePt": 10,
+    "textColor": "172033",
+    "mutedColor": "667085",
+    "accentColor": "245B8A",
+    "background": "F7F9FC",
+    "lineColor": "CBD5E1",
+    "marginLeftPx": 56,
+    "marginRightPx": 56,
+    "marginTopPx": 30,
+    "marginBottomPx": 38,
+    "titleHeightPx": 52,
+    "titleGapPx": 18,
+    "blockGapPx": 14,
+    "columnGapPx": 24,
+    "safePadPx": 3,
+    "lineHeight": 1.28,
+    "footerText": "",
+    "showPageNumber": true
+  },
+  "grid": {
+    "gapPx": 18,
+    "cellPaddingPx": 14,
+    "cardTitleSizePt": 20,
+    "cardBodySizePt": 15,
+    "metricValueSizePt": 30,
+    "metricLabelSizePt": 14,
+    "connectorWidthPt": 2
+  },
+  "roles": {
+    "neutral": {
+      "fillColor": "FFFFFF",
+      "borderColor": "CBD5E1",
+      "titleColor": "172033",
+      "bodyColor": "475467"
+    },
+    "input": {
+      "fillColor": "F2F7FC",
+      "borderColor": "8FB7D9",
+      "titleColor": "245B8A",
+      "bodyColor": "344054"
+    },
+    "process": {
+      "fillColor": "F4F5F7",
+      "borderColor": "98A2B3",
+      "titleColor": "344054",
+      "bodyColor": "475467"
+    },
+    "output": {
+      "fillColor": "F0F8F3",
+      "borderColor": "7EB58E",
+      "titleColor": "246B3C",
+      "bodyColor": "344054"
+    },
+    "human": {
+      "fillColor": "FFF8E8",
+      "borderColor": "D9B85F",
+      "titleColor": "8A681D",
+      "bodyColor": "4B4230"
+    },
+    "warning": {
+      "fillColor": "FFF1F0",
+      "borderColor": "D9857C",
+      "titleColor": "9E3F36",
+      "bodyColor": "5A3430"
+    }
+  },
+  "connector": {
+    "color": "667085",
+    "accentColor": "245B8A",
+    "widthPt": 2,
+    "arrowType": "triangle"
+  },
+  "rules": {
+    "headlineSeconds": 3,
+    "relationshipSeconds": 10,
+    "detailSeconds": 30,
+    "recommendedNodeCount": [3, 7],
+    "maxCardBodyLines": 4,
+    "thumbnailReadable": true,
+    "detailsHaveLowerVisualPriority": true
+  }
+}
