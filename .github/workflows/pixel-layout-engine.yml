@@ -3,14 +3,20 @@ name: Pixel Layout Engine CI
 on:
   push:
     branches:
+      - "main"
       - "feat/pixel-layout-engine-*"
   pull_request:
     paths:
       - "src/pixel_layout_engine.py"
+      - "src/grid_deck.py"
       - "src/ir_to_pptx.js"
       - "src/lint_ir.js"
       - "tests/test_pixel_layout_engine.py"
+      - "tests/test_grid_deck.py"
+      - "tests/test_ir_media.js"
       - "examples/pixel_deck_4x3.json"
+      - "examples/grid_deck_glanceable.json"
+      - "presets/glanceable-*.json"
       - "package.json"
       - ".github/workflows/pixel-layout-engine.yml"
 
@@ -31,5 +37,8 @@ jobs:
 
       - run: npm ci
       - run: python tests/test_pixel_layout_engine.py
+      - run: npm run test:grid
+      - run: npm run test:media
       - run: npm run build:pixel
+      - run: npm run build:grid
       - run: node src/lint_ir.js output/pixel_deck_4x3.json
