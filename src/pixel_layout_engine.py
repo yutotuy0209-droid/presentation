@@ -294,10 +294,46 @@ def read_jpeg_size(path: Path) -> tuple[int, int] | None:
     return None
 
 
+def read_gif_size(path: Path) -> tuple[int, int] | None:
+    with path.open("rb") as f:
+        head = f.read(10)
+    if len(head) >= 10 and head[:6] in {b"GIF87a", b"GIF89a"}:
+        return int.from_bytes(head[6:8], "little"), int.from_bytes(head[8:10], "little")
+    return None
+
+
+def read_svg_size(path: Path) -> tuple[int, int] | None:
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")[:8192]
+    except OSError:
+        return None
+    import re
+    m = re.search(
+        r"<svg\b[^>]*\bwidth=[\"']\s*([0-9.]+)[^\"']*[\"'][^>]*\bheight=[\"']\s*([0-9.]+)",
+        text,
+        re.IGNORECASE,
+    )
+    if m:
+        return int(round(float(m.group(1)))), int(round(float(m.group(2))))
+    vb = re.search(
+        r"\bviewBox=[\"']\s*[-0-9.]+\s+[-0-9.]+\s+([0-9.]+)\s+([0-9.]+)",
+        text,
+        re.IGNORECASE,
+    )
+    if vb:
+        return int(round(float(vb.group(1)))), int(round(float(vb.group(2))))
+    return None
+
+
 def image_size(path: Path) -> tuple[int, int] | None:
     if not path.exists():
         return None
     try:
+        suffix = path.suffix.lower()
+        if suffix == ".gif":
+            return read_gif_size(path)
+        if suffix == ".svg":
+            return read_svg_size(path)
         return read_png_size(path) or read_jpeg_size(path)
     except OSError:
         return None
@@ -449,6 +485,7 @@ def element_ir(
     source: dict[str, Any] | None = None,
     runs: list[dict[str, Any]] | None = None,
     table: dict[str, Any] | None = None,
+    animation: dict[str, Any] | None = None,
     z: int = 10,
 ) -> dict[str, Any]:
     out: dict[str, Any] = {
@@ -473,6 +510,8 @@ def element_ir(
         out["runs"] = runs
     if table is not None:
         out["table"] = table
+    if animation:
+        out["animation"] = dict(animation)
     return out
 
 
@@ -999,8 +1038,13 @@ class DeckCompiler:
                 slide["elements"].append(
                     element_ir(
                         f"{base_id}-b{block_index}", "pic", rect, self.dpi,
-                        source={"path": str(img_path)},
+                        source={
+                            "path": str(img_path),
+                            "mediaType": str(block.get("mediaType") or img_path.suffix.lower().lstrip(".") or "image"),
+                            "fit": str(block.get("fit") or "contain"),
+                        },
                         style=block.get("style") or {},
+                        animation=block.get("animation"),
                         z=int(block.get("z", 15)),
                     )
                 )
@@ -1028,6 +1072,50 @@ class DeckCompiler:
                         )
                     )
                     cursors[slot] = cap_rect.bottom + gap
+
+            elif btype == "video":
+                raw_path = str(block.get("path") or "")
+                if not raw_path:
+                    self.report["warnings"].append({
+                        "slide": base_id, "block": block_index, "rule": "missing-video-path"
+                    })
+                    continue
+                media_path = self._resolve_path(raw_path)
+                if not media_path.exists():
+                    self.report["warnings"].append({
+                        "slide": base_id, "block": block_index,
+                        "rule": "video-not-found", "path": str(media_path)
+                    })
+                max_available = zone.bottom - preferred_y
+                desired_h = int(
+                    requested_h
+                    if requested_h is not None
+                    else block.get("height", min(max_available, int(zone.h * 0.62)))
+                )
+                rect = collision.place_controlled(
+                    f"{base_id}-b{block_index}",
+                    Rect(preferred_x, preferred_y, width, min(desired_h, max_available)),
+                    zone,
+                    **place_opts,
+                )
+                source = {
+                    "path": str(media_path),
+                    "mediaType": "video",
+                    "fit": str(block.get("fit") or "contain"),
+                }
+                poster = str(block.get("poster") or "")
+                if poster:
+                    source["poster"] = str(self._resolve_path(poster))
+                slide["elements"].append(
+                    element_ir(
+                        f"{base_id}-b{block_index}", "media", rect, self.dpi,
+                        source=source,
+                        style=block.get("style") or {},
+                        animation=block.get("animation"),
+                        z=int(block.get("z", 15)),
+                    )
+                )
+                cursors[slot] = rect.bottom + gap
 
             elif btype == "table":
                 rows = block.get("rows") or []
@@ -1118,7 +1206,7 @@ class DeckCompiler:
                     errors.append({
                         "slide": slide["id"], "element": el["id"], "rule": "overflow"
                     })
-                if el["type"] in {"sp", "pic", "graphicFrame"} and not el["id"].endswith(("-footer", "-page")):
+                if el["type"] in {"sp", "pic", "media", "graphicFrame"} and not el["id"].endswith(("-footer", "-page")):
                     for prev_id, prev_rect in foreground:
                         if rect.intersects(prev_rect, int(self.theme["safePadPx"])):
                             errors.append({
