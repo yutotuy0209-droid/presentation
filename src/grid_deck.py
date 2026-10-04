@@ -230,7 +230,7 @@ def _card_blocks(
     ))
 
     if body:
-        body_y = rect.y + pad + title_h + 2
+        body_y = rect.y + pad + title_h + 6
         body_h = max(1, rect.bottom - pad - body_y)
         result.append(_text_block(
             text=body,
@@ -279,7 +279,7 @@ def _metric_blocks(
         x=rect.x + pad,
         y=rect.y + pad,
         w=max(1, rect.w - 2 * pad),
-        h=max(1, rect.h - 2 * pad - label_h),
+        h=max(1, rect.h - 2 * pad - label_h - 6),
         font_pt=value_size,
         color=role_style.get("titleColor", "246B3C"),
         bold=True,
