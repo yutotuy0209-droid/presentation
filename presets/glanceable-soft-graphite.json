@@ -1,0 +1,23 @@
+{
+  "name":"glanceable-soft-graphite",
+  "purpose":"Low-saturation neutral engineering presentation.",
+  "theme":{
+    "fontFamily":"Yu Gothic","titleFontFamily":"Yu Gothic","titleSizePt":30,"bodySizePt":18,
+    "minBodySizePt":14,"captionSizePt":13,"footerSizePt":10,
+    "textColor":"20242A","mutedColor":"737A84","accentColor":"495563","background":"F4F5F6",
+    "lineColor":"D0D4D8","marginLeftPx":56,"marginRightPx":56,"marginTopPx":30,
+    "marginBottomPx":38,"titleHeightPx":52,"titleGapPx":18,"blockGapPx":14,
+    "columnGapPx":24,"safePadPx":3,"lineHeight":1.28,"footerText":"","showPageNumber":true
+  },
+  "grid":{"gapPx":18,"cellPaddingPx":14,"cardTitleSizePt":20,"cardBodySizePt":15,"metricValueSizePt":30,"metricLabelSizePt":14,"connectorWidthPt":2},
+  "roles":{
+    "neutral":{"fillColor":"FFFFFF","borderColor":"C9CDD2","titleColor":"20242A","bodyColor":"555D66"},
+    "input":{"fillColor":"F0F3F5","borderColor":"A9B4BF","titleColor":"455462","bodyColor":"4C5661"},
+    "process":{"fillColor":"ECEFF1","borderColor":"AAB0B6","titleColor":"343A40","bodyColor":"555D66"},
+    "output":{"fillColor":"EFF5F0","borderColor":"91A897","titleColor":"49634F","bodyColor":"4D5950"},
+    "human":{"fillColor":"F8F3E8","borderColor":"C4AF7C","titleColor":"725F34","bodyColor":"5B5039"},
+    "warning":{"fillColor":"F8EEEE","borderColor":"C79B97","titleColor":"814B46","bodyColor":"62433F"}
+  },
+  "connector":{"color":"737A84","accentColor":"495563","widthPt":2,"arrowType":"triangle"},
+  "rules":{"headlineSeconds":3,"relationshipSeconds":10,"detailSeconds":30,"recommendedNodeCount":[3,7],"maxCardBodyLines":4,"thumbnailReadable":true,"detailsHaveLowerVisualPriority":true}
+}
