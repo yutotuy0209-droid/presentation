@@ -273,7 +273,7 @@ def _metric_blocks(
         },
         "z": 4,
     }]
-    label_h = max(30, int(label_size * 1.8))
+    label_h = max(36, int(math.ceil(label_size * 2.2)))
     result.append(_text_block(
         text=value,
         x=rect.x + pad,
