@@ -14,7 +14,7 @@ function intersects(a, b, pad = 0) {
 function isForeground(el) {
   if (!el) return false;
   if (el.style && el.style.allowOverlap) return false;
-  return el.type === 'sp' || el.type === 'pic' || !!el.table;
+  return el.type === 'sp' || el.type === 'pic' || el.type === 'media' || !!el.table;
 }
 
 function lintDeck(deck, options = {}) {
