@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "title": "Grid Deck Demo",
+    "author": "presentation-toolkit"
+  },
+  "canvas": {"preset": "16:9", "dpi": 96},
+  "design": "glanceable-scientific",
+  "slides": [
+    {
+      "id": "one-block",
+      "title": "1ブロック｜主張を一つに絞る",
+      "grid": [["main"]],
+      "blocks": {
+        "main": {
+          "type": "card",
+          "role": "output",
+          "title": "一目で結論",
+          "body": "大きな一つの固まり。詳細は1〜3行に抑え、サムネイルでも構造が分かる。"
+        }
+      }
+    },
+    {
+      "id": "flow",
+      "title": "横3ブロック｜入力 → 処理 → 出力",
+      "grid": [["input", "process", "output"]],
+      "blocks": {
+        "input": {
+          "type": "card",
+          "role": "input",
+          "title": "Input",
+          "body": "Camera image\nP1 / P2"
+        },
+        "process": {
+          "type": "card",
+          "role": "process",
+          "title": "POC",
+          "body": "FFT → correlation peak → subpixel",
+          "animation": {
+            "entrance": "fade",
+            "order": 2,
+            "trigger": "click"
+          }
+        },
+        "output": {
+          "type": "metric",
+          "role": "output",
+          "value": "10.1 µm",
+          "label": "XY displacement"
+        }
+      },
+      "connectors": [
+        {"from": "input", "to": "process"},
+        {"from": "process", "to": "output"}
+      ]
+    },
+    {
+      "id": "span",
+      "title": "大1 + 小2｜写真を主役に、右側で結果を読む",
+      "grid": [
+        ["visual", "result"],
+        ["visual", "note"]
+      ],
+      "blocks": {
+        "visual": {
+          "type": "card",
+          "role": "input",
+          "title": "Visual / GIF / SVG",
+          "body": "同じ領域に画像・SVG・GIF・動画を配置できる。"
+        },
+        "result": {
+          "type": "metric",
+          "role": "output",
+          "value": "0.8 µm",
+          "label": "error"
+        },
+        "note": {
+          "type": "card",
+          "role": "human",
+          "title": "Human check",
+          "body": "未確認値は推測せず、人間判断を明示する。"
+        }
+      },
+      "connectors": [
+        {"from": "visual", "to": "result"}
+      ]
+    }
+  ]
+}
