@@ -242,3 +242,51 @@ Grid Deckを作るときは [Glanceable Grid Presentation Skill](skills/glanceab
 > 一目で構造、数秒で関係、読めば具体。
 
 生成前に `src/design_lint.py` が、長すぎるタイトル、Card本文過多、Block過多、Connector過多などを点検します。
+
+## Background / template
+
+Grid DSL can specify a per-slide background color or image:
+
+```json
+{
+  "background": {
+    "color": "F7F9FC",
+    "image": "assets/background.png"
+  }
+}
+```
+
+Existing PowerPoint template files can be handed to the Windows finalizer:
+
+```json
+{
+  "template": {
+    "path": "templates/lab-template.potx",
+    "applyOnWindows": true
+  }
+}
+```
+
+The base deck stays deterministic; Windows PowerPoint applies the native template in the finalization stage.
+
+## PPTX reverse conversion
+
+Existing PowerPoint files can be converted back to text/JSON:
+
+```bash
+python src/pptx_reverse.py existing.pptx --out-dir output/reversed
+```
+
+Outputs:
+
+- `slide_ir.json` — text, geometry, tables and media references for supported objects
+- `slides.md` — human-readable slide text and geometry
+- `source_bundle/` — loss-aware package preserving master/theme/media/unknown OOXML when optional lxml support is available
+- `reverse-report.json` — limitations and output paths
+
+Two reverse modes are intentionally separate:
+
+1. **Editable IR** for analysis/re-generation.
+2. **Loss-aware source bundle** when preserving the original PowerPoint package matters more than semantic simplification.
+
+An arbitrary old PPTX cannot be perfectly reconstructed as the high-level Grid DSL because PowerPoint does not store concepts such as `role: input` or `grid: [[A,B,C]]`. Those meanings can only be inferred, so the reverse tool does not silently invent them.
