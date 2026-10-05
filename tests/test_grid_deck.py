@@ -172,6 +172,25 @@ class GridDeckTests(unittest.TestCase):
         media = next(e for e in deck["slides"][0]["elements"] if e.get("type") == "media")
         self.assertEqual(media["source"]["mediaType"], "audio")
 
+    def test_background_and_template_are_preserved(self):
+        spec = {
+            "template": {"path": "template.potx", "applyOnWindows": True},
+            "slides": [{
+                "id": "bg",
+                "title": "Background",
+                "background": {"color": "F1F3F5", "image": "background.png"},
+                "grid": [["A"]],
+                "blocks": {
+                    "A": {"type": "card", "title": "A"}
+                },
+            }],
+        }
+        pixel_spec = compile_grid_spec(spec, Path("/tmp/grid.json"))
+        self.assertEqual(pixel_spec["meta"]["template"]["path"], "template.potx")
+        slide = pixel_spec["slides"][0]
+        self.assertEqual(slide["background"]["color"], "F1F3F5")
+        self.assertEqual(slide["background"]["image"], "background.png")
+
     def test_gif_dimensions_are_read(self):
         with tempfile.TemporaryDirectory() as td:
             p = Path(td) / "tiny.gif"
