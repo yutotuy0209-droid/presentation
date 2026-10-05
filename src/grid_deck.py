@@ -160,6 +160,7 @@ def _text_block(
     align: str = "left",
     z: int = 20,
     animation: dict[str, Any] | None = None,
+    hyperlink: str | None = None,
 ) -> dict[str, Any]:
     out = {
         "type": "text",
@@ -178,6 +179,8 @@ def _text_block(
     }
     if animation:
         out["animation"] = deepcopy(animation)
+    if hyperlink:
+        out["hyperlink"] = str(hyperlink)
     return out
 
 
@@ -227,6 +230,7 @@ def _card_blocks(
         bold=True,
         z=20,
         animation=animation,
+        hyperlink=str(block.get("hyperlink")) if block.get("hyperlink") else None,
     ))
 
     if body:
@@ -285,6 +289,7 @@ def _metric_blocks(
         bold=True,
         align="center",
         animation=block.get("animation"),
+        hyperlink=str(block.get("hyperlink")) if block.get("hyperlink") else None,
     ))
     result.append(_text_block(
         text=label,
@@ -304,8 +309,8 @@ def _media_block(
     rect: Rect,
 ) -> dict[str, Any]:
     raw_type = str(block.get("type") or "image").lower()
-    normalized = "video" if raw_type == "video" else "image"
-    media_type = raw_type if raw_type in {"gif", "svg", "video"} else str(block.get("mediaType") or "image")
+    normalized = raw_type if raw_type in {"video", "audio"} else "image"
+    media_type = raw_type if raw_type in {"gif", "svg", "video", "audio"} else str(block.get("mediaType") or "image")
     out = {
         "type": normalized,
         "path": str(block.get("path") or ""),
@@ -327,6 +332,8 @@ def _media_block(
         out["caption"] = str(block["caption"])
     if block.get("animation"):
         out["animation"] = deepcopy(block["animation"])
+    if block.get("hyperlink"):
+        out["hyperlink"] = str(block["hyperlink"])
     return out
 
 
@@ -466,7 +473,7 @@ def compile_grid_spec(spec: dict[str, Any], spec_path: Path) -> dict[str, Any]:
                 blocks.extend(_card_blocks(bid, block, rect, preset))
             elif btype == "metric":
                 blocks.extend(_metric_blocks(bid, block, rect, preset))
-            elif btype in {"image", "gif", "svg", "video"}:
+            elif btype in {"image", "gif", "svg", "video", "audio"}:
                 if block.get("title"):
                     role_style = _role_style(preset, str(block.get("role") or "neutral"))
                     title_h = int(grid_cfg.get("cardTitleSizePt", 20) * 1.9)
@@ -518,6 +525,7 @@ def compile_grid_spec(spec: dict[str, Any], spec_path: Path) -> dict[str, Any]:
             "layout": "title-body",
             "regions": regions,
             "blocks": blocks,
+            **({"transition": deepcopy(slide["transition"])} if slide.get("transition") else {}),
         })
 
     if not low["slides"]:
