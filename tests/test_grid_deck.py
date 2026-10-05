@@ -136,6 +136,34 @@ class GridDeckTests(unittest.TestCase):
         self.assertIn("roles", preset)
         self.assertIn("process", preset["roles"])
 
+    def test_transition_hyperlink_and_audio_flow_to_pixel_spec(self):
+        spec = {
+            "slides": [{
+                "id": "native",
+                "title": "Native",
+                "transition": {"type": "fade", "duration": 0.5},
+                "grid": [["A", "B"]],
+                "blocks": {
+                    "A": {
+                        "type": "card",
+                        "title": "Link",
+                        "hyperlink": "https://example.com",
+                    },
+                    "B": {
+                        "type": "audio",
+                        "path": "voice.mp3",
+                    },
+                },
+            }]
+        }
+        pixel_spec = compile_grid_spec(spec, Path("/tmp/grid.json"))
+        slide = pixel_spec["slides"][0]
+        self.assertEqual(slide["transition"]["type"], "fade")
+        link_blocks = [b for b in slide["blocks"] if b.get("hyperlink")]
+        self.assertTrue(link_blocks)
+        audio = next(b for b in slide["blocks"] if b.get("type") == "audio")
+        self.assertEqual(audio["mediaType"], "audio")
+
     def test_gif_dimensions_are_read(self):
         with tempfile.TemporaryDirectory() as td:
             p = Path(td) / "tiny.gif"
