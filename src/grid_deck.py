@@ -26,6 +26,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from design_lint import lint_grid_spec
+
 from pixel_layout_engine import (
     DEFAULT_THEME,
     DeckCompiler,
@@ -546,6 +548,19 @@ def main() -> int:
     args = ap.parse_args()
 
     raw = json.loads(args.spec.read_text(encoding="utf-8"))
+    design_issues = lint_grid_spec(raw)
+    design_report = args.out_spec.with_suffix(".design-lint.json")
+    design_report.parent.mkdir(parents=True, exist_ok=True)
+    design_report.write_text(
+        json.dumps(design_issues, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"[grid-deck] design lint: {design_report}")
+    for issue in design_issues:
+        if issue.get("severity") == "warning":
+            print(f"[grid-deck] design warning: {issue.get('slide')} / {issue.get('rule')}")
+    if args.strict and any(issue.get("severity") == "error" for issue in design_issues):
+        return 1
+
     pixel_spec = compile_grid_spec(raw, args.spec)
     args.out_spec.parent.mkdir(parents=True, exist_ok=True)
     args.out_spec.write_text(json.dumps(pixel_spec, ensure_ascii=False, indent=2), encoding="utf-8")
