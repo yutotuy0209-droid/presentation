@@ -73,6 +73,17 @@ def build_finalize_plan(
     warnings: list[dict[str, Any]] = []
     slides_out: list[dict[str, Any]] = []
 
+    raw_template = (deck.get("meta") or {}).get("template")
+    template_plan = None
+    if raw_template:
+        if isinstance(raw_template, str):
+            template_plan = {"path": raw_template, "applyOnWindows": True}
+        elif isinstance(raw_template, dict):
+            template_plan = {
+                "path": str(raw_template.get("path") or ""),
+                "applyOnWindows": bool(raw_template.get("applyOnWindows", True)),
+            }
+
     for slide_index, slide in enumerate(deck.get("slides") or [], start=1):
         slide_id = str(slide.get("id") or f"slide-{slide_index}")
         transition = slide.get("transition")
@@ -149,6 +160,7 @@ def build_finalize_plan(
     return {
         "version": 1,
         "backend": "python-win32com-powerpoint",
+        "template": template_plan,
         "slides": slides_out,
         "warnings": warnings,
     }
@@ -206,6 +218,13 @@ def apply_finalize_plan(
             Untitled=False,
             WithWindow=bool(visible),
         )
+
+        template = plan.get("template")
+        if template and template.get("applyOnWindows") and template.get("path"):
+            template_path = Path(str(template["path"])).expanduser().resolve()
+            if not template_path.exists():
+                raise FileNotFoundError(template_path)
+            presentation.ApplyTemplate(str(template_path))
 
         for slide_plan in plan.get("slides") or []:
             slide = presentation.Slides(int(slide_plan["slideIndex"]))
