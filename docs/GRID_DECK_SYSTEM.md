@@ -240,3 +240,76 @@ editable PPTX
 - GIF/MP4 poster frame
 - Markdown → Grid DSL adapter
 - codeconvert relationship JSON → Grid Deck
+
+---
+
+## 10. Python PowerPoint finalizer
+
+Base deck:
+
+```text
+Grid DSL
+  ↓
+Python layout
+  ↓
+PptxGenJS writer
+  ↓
+base.pptx + generation-report.json
+```
+
+PowerPoint-native finish:
+
+```text
+Slide IR + generation report
+  ↓
+powerpoint_finalize.py plan
+  ↓
+finalize-plan.json
+  ↓
+Windows + PowerPoint + pywin32
+  ↓
+final.pptx
+```
+
+The writer records an explicit `shapeMap` so the finalizer does not guess which PowerPoint shape belongs to an IR element.
+
+Supported finalizer features:
+
+- entrance animation: appear / fade / wipe / fly
+- triggers: click / with_previous / after_previous
+- slide transitions
+- hyperlinks
+
+The pure plan builder is platform-independent and tested in CI. Only the COM application step requires Windows desktop PowerPoint.
+
+---
+
+## 11. Media paths
+
+The Grid DSL accepts:
+
+```json
+{"type": "gif",   "path": "assets/motion.gif"}
+{"type": "svg",   "path": "assets/diagram.svg"}
+{"type": "video", "path": "assets/demo.mp4"}
+{"type": "audio", "path": "assets/voice.mp3"}
+```
+
+The human chooses the path. The generation backend performs insertion/embedding. Do not make the AI reproduce binary media.
+
+---
+
+## 12. Design system
+
+Use `skills/glanceable-grid-presentation/SKILL.md`.
+
+The skill defines:
+- 3 / 10 / 30 second visual hierarchy,
+- standard Grid patterns,
+- semantic role colors,
+- human vs system representation,
+- connector rules,
+- typography,
+- motion hierarchy.
+
+`src/design_lint.py` enforces the parts that can be checked deterministically.
