@@ -13,7 +13,8 @@
     "build:grid": "python src/grid_deck.py build examples/grid_deck_glanceable.json --out-spec output/grid_deck.pixel.json --out-ir output/grid_deck.ir.json --pptx output/grid_deck.pptx --strict",
     "test:design": "python tests/test_design_lint.py",
     "test:finalize": "python tests/test_powerpoint_finalize.py",
-    "lint:design": "python src/design_lint.py examples/grid_deck_glanceable.json --out output/grid_deck.design-lint.json"
+    "lint:design": "python src/design_lint.py examples/grid_deck_glanceable.json --out output/grid_deck.design-lint.json",
+    "test:reverse": "python tests/test_pptx_reverse.py"
   },
   "dependencies": {
     "pptxgenjs": "^4.0.1",
