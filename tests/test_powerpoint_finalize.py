@@ -51,6 +51,20 @@ class PowerPointFinalizePlanTests(unittest.TestCase):
         self.assertEqual(plan["slides"][0]["hyperlinks"][0]["shapeIndex"], 2)
         self.assertEqual(plan["slides"][0]["hyperlinks"][0]["address"], "https://example.com")
 
+    def test_template_path_flows_to_finalize_plan(self):
+        deck = {
+            "meta": {
+                "template": {
+                    "path": "C:/templates/lab.potx",
+                    "applyOnWindows": True,
+                }
+            },
+            "slides": [{"id": "s1", "elements": []}],
+        }
+        plan = build_finalize_plan(deck, {"shapeMap": {"s1": {}}})
+        self.assertEqual(plan["template"]["path"], "C:/templates/lab.potx")
+        self.assertTrue(plan["template"]["applyOnWindows"])
+
     def test_missing_shape_mapping_is_reported_not_guessed(self):
         deck = {
             "slides": [{
