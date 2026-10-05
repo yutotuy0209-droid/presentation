@@ -39,6 +39,7 @@ async function main() {
   assert.deepStrictEqual(result.unsupported, []);
   assert.strictEqual(result.animationReservations.length, 1);
   assert.strictEqual(result.animationReservations[0].applied, false);
+  assert.strictEqual(result.shapeMap.s1.gif1, 1);
   console.log('media writer ok:', out);
 }
 
