@@ -156,13 +156,21 @@ class GridDeckTests(unittest.TestCase):
                 },
             }]
         }
-        pixel_spec = compile_grid_spec(spec, Path("/tmp/grid.json"))
+        pixel_spec, deck, _ = self._compile(spec)
         slide = pixel_spec["slides"][0]
         self.assertEqual(slide["transition"]["type"], "fade")
         link_blocks = [b for b in slide["blocks"] if b.get("hyperlink")]
         self.assertTrue(link_blocks)
         audio = next(b for b in slide["blocks"] if b.get("type") == "audio")
         self.assertEqual(audio["mediaType"], "audio")
+        self.assertEqual(deck["slides"][0]["transition"]["type"], "fade")
+        interactions = [
+            e.get("interaction") for e in deck["slides"][0]["elements"]
+            if e.get("interaction")
+        ]
+        self.assertTrue(any(x.get("hyperlink") == "https://example.com" for x in interactions))
+        media = next(e for e in deck["slides"][0]["elements"] if e.get("type") == "media")
+        self.assertEqual(media["source"]["mediaType"], "audio")
 
     def test_gif_dimensions_are_read(self):
         with tempfile.TemporaryDirectory() as td:
