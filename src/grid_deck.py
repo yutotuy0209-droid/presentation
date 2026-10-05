@@ -429,6 +429,7 @@ def compile_grid_spec(spec: dict[str, Any], spec_path: Path) -> dict[str, Any]:
         "meta": {
             "source": "grid-deck",
             "designPreset": preset.get("name", "glanceable-scientific"),
+            **({"template": deepcopy(spec.get("template"))} if spec.get("template") else {}),
             **(spec.get("meta") or {}),
         },
         "theme": deep_merge(preset.get("theme") or DEFAULT_THEME, spec.get("theme")),
@@ -527,6 +528,7 @@ def compile_grid_spec(spec: dict[str, Any], spec_path: Path) -> dict[str, Any]:
             "layout": "title-body",
             "regions": regions,
             "blocks": blocks,
+            **({"background": deepcopy(slide["background"])} if slide.get("background") else {}),
             **({"transition": deepcopy(slide["transition"])} if slide.get("transition") else {}),
         })
 
