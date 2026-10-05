@@ -720,10 +720,21 @@ class DeckCompiler:
         if isinstance(slide_spec.get("titleBox"), dict):
             zones["title"] = rect_from_mapping(slide_spec["titleBox"], zones["title"])
         collision = CollisionMap(Rect(0, 0, self.width, self.height), int(self.theme["safePadPx"]))
+        raw_background = slide_spec.get("background")
+        if isinstance(raw_background, str):
+            background_color = raw_background
+            background_image = ""
+        elif isinstance(raw_background, dict):
+            background_color = str(raw_background.get("color") or self.theme["background"])
+            background_image = str(raw_background.get("image") or "")
+        else:
+            background_color = self.theme["background"]
+            background_image = ""
+
         slide = {
             "id": slide_id,
             "number": len(self.deck["slides"]) + 1,
-            "background": self.theme["background"],
+            "background": background_color,
             "elements": [],
             "_zones": zones,
             "_collision": collision,
@@ -735,6 +746,31 @@ class DeckCompiler:
         }
         if slide_spec.get("transition"):
             slide["transition"] = slide_spec["transition"]
+
+        if background_image:
+            background_image_path = self._resolve_path(background_image)
+            if not background_image_path.exists():
+                self.report["warnings"].append({
+                    "slide": slide_id,
+                    "rule": "background-image-not-found",
+                    "path": str(background_image_path),
+                })
+            slide["elements"].append(
+                element_ir(
+                    f"{slide_id}-background-image",
+                    "pic",
+                    Rect(0, 0, self.width, self.height),
+                    self.dpi,
+                    source={
+                        "path": str(background_image_path),
+                        "mediaType": background_image_path.suffix.lower().lstrip(".") or "image",
+                        "fit": "cover",
+                        "role": "background",
+                    },
+                    style={"allowOverlap": True},
+                    z=-100,
+                )
+            )
 
         if title:
             title_text = title + ("（続き）" if continuation else "")
@@ -1233,7 +1269,11 @@ class DeckCompiler:
                     errors.append({
                         "slide": slide["id"], "element": el["id"], "rule": "overflow"
                     })
-                if el["type"] in {"sp", "pic", "media", "graphicFrame"} and not el["id"].endswith(("-footer", "-page")):
+                if (
+                    el["type"] in {"sp", "pic", "media", "graphicFrame"}
+                    and not el["id"].endswith(("-footer", "-page"))
+                    and not (el.get("style") or {}).get("allowOverlap")
+                ):
                     for prev_id, prev_rect in foreground:
                         if rect.intersects(prev_rect, int(self.theme["safePadPx"])):
                             errors.append({
