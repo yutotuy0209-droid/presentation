@@ -290,3 +290,13 @@ Two reverse modes are intentionally separate:
 2. **Loss-aware source bundle** when preserving the original PowerPoint package matters more than semantic simplification.
 
 An arbitrary old PPTX cannot be perfectly reconstructed as the high-level Grid DSL because PowerPoint does not store concepts such as `role: input` or `grid: [[A,B,C]]`. Those meanings can only be inferred, so the reverse tool does not silently invent them.
+
+## Round-trip first
+
+Reverse conversion is a core architecture requirement, not only an import utility.
+
+Coverage is judged by whether a real human-created PPTX feature can be detected, represented or safely preserved, regenerated/retained, and verified after round-trip.
+
+Human-edited decks are also design evidence: spacing, typography, geometry, palette, image/text ratio and recurring layout families should be extracted and compared rather than encoded as one-off prompt rules.
+
+See [ROUNDTRIP_FIRST_ARCHITECTURE.md](docs/ROUNDTRIP_FIRST_ARCHITECTURE.md).
