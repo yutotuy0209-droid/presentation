@@ -179,3 +179,66 @@ npm run build:grid
 - `glanceable-warm`
 
 原則は **「一目で構造、数秒で関係、読めば具体」** です。
+
+## Python + PowerPoint finalization
+
+Grid/PPTX生成後、Windows版PowerPoint本体でしか扱いにくい機能は `src/powerpoint_finalize.py` で後処理できます。
+
+現在の対象:
+
+- Fade / Appear / Wipe / Fly entrance animation
+- click / with_previous / after_previous trigger
+- slide transition
+- hyperlink
+- GIF / SVG / video / audioを含む生成PPTXとの共存
+
+生成時に `ir_to_pptx.js` が `shapeMap` をreportへ出すため、Pythonは形状を推測せず、生成したshape indexを使います。
+
+Windows:
+
+```powershell
+python -m pip install -r requirements-windows-powerpoint.txt
+
+python src/powerpoint_finalize.py plan `
+  output/grid_deck.ir.json `
+  output/grid_deck.generation-report.json `
+  --out output/grid_deck.finalize-plan.json
+
+python src/powerpoint_finalize.py apply `
+  output/grid_deck.pptx `
+  output/grid_deck.finalize-plan.json `
+  --out output/grid_deck.final.pptx
+```
+
+### 動画・音声の考え方
+
+人間が指定するのは基本的にファイルパスだけです。
+
+```json
+{
+  "type": "video",
+  "path": "assets/experiment.mp4"
+}
+```
+
+または:
+
+```json
+{
+  "type": "audio",
+  "path": "assets/narration.mp3"
+}
+```
+
+生成時にそのファイルを読み込み、PowerPoint mediaとして処理します。
+「PPTX内に単なる文字列のパスだけを置く」設計にはしません。
+
+## Design skill
+
+Grid Deckを作るときは [Glanceable Grid Presentation Skill](skills/glanceable-grid-presentation/SKILL.md) を使用します。
+
+設計原則:
+
+> 一目で構造、数秒で関係、読めば具体。
+
+生成前に `src/design_lint.py` が、長すぎるタイトル、Card本文過多、Block過多、Connector過多などを点検します。
