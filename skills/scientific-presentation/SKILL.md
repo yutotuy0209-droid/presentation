@@ -28,3 +28,9 @@ Make the evidence, method, and interpretation understandable with the fewest nec
 - diagrams before long prose
 - consistent margins and typography
 - speaker notes only when they add information that should not appear on the slide
+
+## Diagram/layout companion
+
+When the slide contains multiple related concepts, human/system workflow,
+input/process/output, or visual evidence plus results, use
+`../glanceable-grid-presentation/SKILL.md` rather than manually inventing coordinates.
