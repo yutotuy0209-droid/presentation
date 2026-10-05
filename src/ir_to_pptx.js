@@ -70,9 +70,12 @@ async function irToPptx(deck, outputFile) {
   const unsupported = [];
   const warnings = [];
   const animationReservations = [];
+  const shapeMap = {};
 
   for (const s of deck.slides || []) {
     const slide = pptx.addSlide();
+    const slideShapeMap = {};
+    let shapeIndex = 0;
     if (s.background) {
       slide.background = { color: normalizeColor(s.background, 'FFFFFF') };
     }
@@ -101,6 +104,8 @@ async function irToPptx(deck, outputFile) {
 
         if (el.type === 'sp' && (el.text || el.runs?.length)) {
           slide.addText(el.text || '', textOptions(el, box));
+          shapeIndex += 1;
+          slideShapeMap[el.id] = shapeIndex;
           continue;
         }
 
@@ -109,6 +114,8 @@ async function irToPptx(deck, outputFile) {
           const p = src.path ? path.resolve(src.path) : null;
           if (p && fs.existsSync(p)) {
             slide.addImage({ path: p, ...box });
+            shapeIndex += 1;
+            slideShapeMap[el.id] = shapeIndex;
           } else {
             warnings.push({
               slide: s.id,
@@ -133,6 +140,8 @@ async function irToPptx(deck, outputFile) {
               w: box.w,
               h: box.h,
             });
+            shapeIndex += 1;
+            slideShapeMap[el.id] = shapeIndex;
           } else {
             warnings.push({
               slide: s.id,
@@ -186,6 +195,8 @@ async function irToPptx(deck, outputFile) {
             margin: Number(el.style?.cellMarginPt || 3),
             autoFit: false,
           });
+          shapeIndex += 1;
+          slideShapeMap[el.id] = shapeIndex;
           continue;
         }
 
@@ -201,6 +212,8 @@ async function irToPptx(deck, outputFile) {
               endArrowType: style.endArrowType || 'none',
             },
           });
+          shapeIndex += 1;
+          slideShapeMap[el.id] = shapeIndex;
           continue;
         }
 
@@ -209,6 +222,8 @@ async function irToPptx(deck, outputFile) {
             ...box,
             ...shapeStyle(el.style || {}),
           });
+          shapeIndex += 1;
+          slideShapeMap[el.id] = shapeIndex;
           continue;
         }
 
@@ -230,6 +245,7 @@ async function irToPptx(deck, outputFile) {
         });
       }
     }
+    shapeMap[s.id] = slideShapeMap;
   }
 
   fs.mkdirSync(path.dirname(path.resolve(outputFile)), { recursive: true });
@@ -239,6 +255,7 @@ async function irToPptx(deck, outputFile) {
     unsupported,
     warnings,
     animationReservations,
+    shapeMap,
   };
 }
 
