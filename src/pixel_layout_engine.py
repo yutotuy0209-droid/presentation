@@ -486,6 +486,7 @@ def element_ir(
     runs: list[dict[str, Any]] | None = None,
     table: dict[str, Any] | None = None,
     animation: dict[str, Any] | None = None,
+    interaction: dict[str, Any] | None = None,
     z: int = 10,
 ) -> dict[str, Any]:
     out: dict[str, Any] = {
@@ -512,6 +513,8 @@ def element_ir(
         out["table"] = table
     if animation:
         out["animation"] = dict(animation)
+    if interaction:
+        out["interaction"] = dict(interaction)
     return out
 
 
@@ -607,6 +610,7 @@ def make_text_element(
     style_override: dict[str, Any] | None = None,
     z: int = 20,
     animation: dict[str, Any] | None = None,
+    interaction: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     style = deep_merge(
         {
@@ -631,7 +635,7 @@ def make_text_element(
     }]
     return element_ir(
         eid, "sp", rect, dpi, text=text, style=style, runs=runs,
-        animation=animation, z=z,
+        animation=animation, interaction=interaction, z=z,
     )
 
 
@@ -729,6 +733,8 @@ class DeckCompiler:
                 "right": zones["right"].y,
             },
         }
+        if slide_spec.get("transition"):
+            slide["transition"] = slide_spec["transition"]
 
         if title:
             title_text = title + ("（続き）" if continuation else "")
@@ -884,6 +890,10 @@ class DeckCompiler:
                         rect,
                         self.dpi,
                         style=block.get("style") or {},
+                        interaction=(
+                            block.get("interaction")
+                            or ({"hyperlink": block.get("hyperlink")} if block.get("hyperlink") else None)
+                        ),
                         z=int(block.get("z", 2)),
                     )
                 )
@@ -1006,6 +1016,10 @@ class DeckCompiler:
                         text, rect, font_pt, self.theme, self.dpi,
                         block.get("style"), z=int(block.get("z", 20)),
                         animation=block.get("animation"),
+                        interaction=(
+                            block.get("interaction")
+                            or ({"hyperlink": block.get("hyperlink")} if block.get("hyperlink") else None)
+                        ),
                     )
                 )
                 cursors[slot] = rect.bottom + gap
@@ -1050,6 +1064,10 @@ class DeckCompiler:
                         },
                         style=block.get("style") or {},
                         animation=block.get("animation"),
+                        interaction=(
+                            block.get("interaction")
+                            or ({"hyperlink": block.get("hyperlink")} if block.get("hyperlink") else None)
+                        ),
                         z=int(block.get("z", 15)),
                     )
                 )
@@ -1078,7 +1096,7 @@ class DeckCompiler:
                     )
                     cursors[slot] = cap_rect.bottom + gap
 
-            elif btype == "video":
+            elif btype in {"video", "audio"}:
                 raw_path = str(block.get("path") or "")
                 if not raw_path:
                     self.report["warnings"].append({
@@ -1105,7 +1123,7 @@ class DeckCompiler:
                 )
                 source = {
                     "path": str(media_path),
-                    "mediaType": "video",
+                    "mediaType": btype,
                     "fit": str(block.get("fit") or "contain"),
                 }
                 poster = str(block.get("poster") or "")
@@ -1117,6 +1135,10 @@ class DeckCompiler:
                         source=source,
                         style=block.get("style") or {},
                         animation=block.get("animation"),
+                        interaction=(
+                            block.get("interaction")
+                            or ({"hyperlink": block.get("hyperlink")} if block.get("hyperlink") else None)
+                        ),
                         z=int(block.get("z", 15)),
                     )
                 )
