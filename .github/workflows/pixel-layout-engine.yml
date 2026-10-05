@@ -10,12 +10,14 @@ on:
       - "src/pixel_layout_engine.py"
       - "src/grid_deck.py"
       - "src/powerpoint_finalize.py"
+      - "src/pptx_reverse.py"
       - "src/design_lint.py"
       - "src/ir_to_pptx.js"
       - "src/lint_ir.js"
       - "tests/test_pixel_layout_engine.py"
       - "tests/test_grid_deck.py"
       - "tests/test_powerpoint_finalize.py"
+      - "tests/test_pptx_reverse.py"
       - "tests/test_design_lint.py"
       - "tests/test_ir_media.js"
       - "examples/pixel_deck_4x3.json"
@@ -45,6 +47,7 @@ jobs:
       - run: npm run test:grid
       - run: npm run test:design
       - run: npm run test:finalize
+      - run: npm run test:reverse
       - run: npm run test:media
       - run: npm run build:pixel
       - run: npm run build:grid
