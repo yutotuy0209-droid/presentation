@@ -22,6 +22,7 @@ on:
       - "tests/test_ir_media.js"
       - "examples/pixel_deck_4x3.json"
       - "examples/grid_deck_glanceable.json"
+      - "examples/research_update_4x3_customizable.json"
       - "presets/glanceable-*.json"
       - "skills/glanceable-grid-presentation/SKILL.md"
       - "package.json"
@@ -51,4 +52,5 @@ jobs:
       - run: npm run test:media
       - run: npm run build:pixel
       - run: npm run build:grid
+      - run: python src/grid_deck.py build examples/research_update_4x3_customizable.json --out-spec output/research_update_4x3.pixel.json --out-ir output/research_update_4x3.ir.json --pptx output/research_update_4x3.pptx --strict
       - run: node src/lint_ir.js output/pixel_deck_4x3.json
