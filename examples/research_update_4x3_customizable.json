@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "title": "Reusable 4:3 progress deck (sample only)",
+    "author": "presentation-toolkit"
+  },
+  "canvas": {
+    "preset": "4:3",
+    "dpi": 96
+  },
+  "design": {
+    "preset": "glanceable-scientific",
+    "theme": {
+      "fontFamily": "Yu Gothic",
+      "titleFontFamily": "Yu Gothic",
+      "accentColor": "245B8A",
+      "footerText": "SAMPLE / replace before presentation"
+    },
+    "grid": {
+      "gapPx": 16,
+      "cardBodySizePt": 15
+    }
+  },
+  "slides": [
+    {
+      "id": "changes",
+      "title": "今週の変更点",
+      "grid": [
+        [
+          "main"
+        ]
+      ],
+      "blocks": {
+        "main": {
+          "type": "card",
+          "role": "output",
+          "title": "変更点を一つに絞る",
+          "body": "前回から変更した内容を記載する。\n事実と未確認事項を区別する。"
+        }
+      }
+    },
+    {
+      "id": "evidence",
+      "title": "結果と確認事項",
+      "grid": [
+        [
+          "result",
+          "review"
+        ]
+      ],
+      "blocks": {
+        "result": {
+          "type": "card",
+          "role": "output",
+          "title": "確認できた結果",
+          "body": "根拠を示す画像や数値に置き換える。"
+        },
+        "review": {
+          "type": "card",
+          "role": "human",
+          "title": "まだ確認が必要",
+          "body": "未検証の仮説を確定結果として書かない。"
+        }
+      }
+    },
+    {
+      "id": "next",
+      "title": "次回までの作業",
+      "grid": [
+        [
+          "next"
+        ]
+      ],
+      "blocks": {
+        "next": {
+          "type": "card",
+          "role": "process",
+          "title": "次の一手",
+          "body": "優先する作業と、その完了条件を記載する。"
+        }
+      }
+    }
+  ]
+}
