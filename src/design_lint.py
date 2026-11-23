@@ -31,7 +31,7 @@ def _baseline_quality_checks(slide: dict[str, Any], sid: str) -> list[dict[str, 
                 entries.append((str(bid), field, str(block[field])))
         for field in ("title", "body", "text"):
             value = str(block.get(field) or "")
-            match = re.match(r"^\\s*(リスク|ご判断いただきたい点|判断事項)\\s*[：:]", value)
+            match = re.match(r"^\s*(リスク|ご判断いただきたい点|判断事項)\s*[：:]", value)
             if match:
                 repeated_labels.setdefault(match.group(1), []).append(str(bid))
 
@@ -40,12 +40,12 @@ def _baseline_quality_checks(slide: dict[str, Any], sid: str) -> list[dict[str, 
         location = {"slide": sid}
         if bid != "slide":
             location["block"] = bid
-        if re.match(r"^[|｜]\\s+", stripped):
+        if re.match(r"^[|｜]\s+", stripped):
             issues.append({
                 **location, "severity": "error", "rule": "decorative-leading-bar",
                 "message": "Remove meaningless leading vertical bars in headings.",
             })
-        if field == "title" and re.match(r"^(?:STEP\\s*)?0[1-9](?=\\s|[.．、:：])", stripped, re.I):
+        if field == "title" and re.match(r"^(?:STEP\s*)?0[1-9](?=\s|[.．、:：])", stripped, re.I):
             issues.append({
                 **location, "severity": "warning", "rule": "unnecessary-zero-padding",
                 "message": "Use 1, 2, 3 instead of 01, 02, 03 unless the number is meaningful.",
@@ -66,7 +66,7 @@ def _baseline_quality_checks(slide: dict[str, Any], sid: str) -> list[dict[str, 
                 "value": len(stripped),
                 "message": "Move long legal/source notes to a readable dedicated area or appendix.",
             })
-        if re.search(r"[はがのをにへとでも]\\n", value):
+        if re.search(r"[はがのをにへとでも]\n", value):
             issues.append({
                 **location, "severity": "warning", "rule": "suspicious-manual-linebreak",
                 "message": "Check whether this forced break separates a Japanese particle from its phrase.",
