@@ -6,7 +6,7 @@
 
 ## Current scope
 
-- AI生成スライドの文章・論理・デザインに関する厳格な品質基準：[プロ仕様スライド作成・AI臭排除プロンプト](docs/PROFESSIONAL_SLIDE_PROMPT.md)
+- AI生成スライドの最低品質基準（必須検収ルール）：[プロ仕様スライド作成・AI臭排除プロンプト](docs/PROFESSIONAL_SLIDE_PROMPT.md)
 
 - Pythonで任意の非暗号化PPTXを素材・XML・編集用JSONへ展開し、未対応要素を保持して復元する：[PPTX_SOURCE_BUNDLE.md](docs/PPTX_SOURCE_BUNDLE.md)
 
@@ -234,6 +234,12 @@ python src/powerpoint_finalize.py apply `
 
 生成時にそのファイルを読み込み、PowerPoint mediaとして処理します。
 「PPTX内に単なる文字列のパスだけを置く」設計にはしません。
+
+## Minimum quality gate
+
+生成時の最低品質基準は [SLIDE_MINIMUM_QUALITY_GATE.md](docs/SLIDE_MINIMUM_QUALITY_GATE.md) を正本とします。これは「プロ仕様」の加点基準ではなく、未達なら完成扱いにしない基準です。具体的な欠陥例・コピペ可能な指示全文は [PROFESSIONAL_SLIDE_PROMPT.md](docs/PROFESSIONAL_SLIDE_PROMPT.md) に保持します。
+
+`src/design_lint.py` は客観的な欠陥（未解決のプレースホルダー、装飾縦線、過長フッター等）をエラーまたは警告として検出します。`build:grid --strict` ではエラーがあると停止します。意味の妥当性、レンダリング後の文字折り返し、視覚的な対応関係は自動検出だけでは保証できないため、レンダリング画像の最終レビューを必須とします。
 
 ## Design skill
 
