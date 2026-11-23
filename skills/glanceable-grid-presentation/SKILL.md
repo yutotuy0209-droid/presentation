@@ -8,6 +8,7 @@ Use this together with:
 - `skills/presentation-structure/SKILL.md`
 - `skills/scientific-presentation/SKILL.md`
 - `docs/DESIGN_PREFERENCE_LOOP.md`
+- `docs/PROFESSIONAL_SLIDE_PROMPT.md` (mandatory editorial and visual quality requirements)
 - `src/grid_deck.py`
 
 ## Core target
@@ -172,6 +173,8 @@ Do not animate decorative elements.
 Native animation requests should be stored in the DSL and applied by `src/powerpoint_finalize.py` on Windows.
 
 ## Quality gate
+
+Apply every requirement in `docs/PROFESSIONAL_SLIDE_PROMPT.md` before treating a slide as complete. In particular, reject abstract buzzwords, decision slides without explicit options, duplicated labels, unnatural line breaks, arbitrary decorative bars/zero-padded indices, uneven side-by-side cards, unexplained grey backgrounds, and disconnected sections. This check is required in addition to the rules below.
 
 Before accepting a slide, check:
 - Can the structure be understood from thumbnail scale?
