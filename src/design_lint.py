@@ -5,8 +5,109 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
+
+
+
+def _baseline_quality_checks(slide: dict[str, Any], sid: str) -> list[dict[str, Any]]:
+    """Catch objective AI-generated slide defects before rendering.
+
+    Semantic coherence and actual text wrapping still need rendered review.
+    """
+    issues: list[dict[str, Any]] = []
+    blocks = slide.get("blocks") or {}
+    entries: list[tuple[str, str, str]] = [
+        ("slide", "title", str(slide.get("title") or "")),
+        ("slide", "footer", str(slide.get("footer") or "")),
+    ]
+    repeated_labels: dict[str, list[str]] = {}
+    for bid, block in blocks.items():
+        if not isinstance(block, dict):
+            continue
+        for field in ("title", "subtitle", "body", "text", "description", "note", "footer"):
+            if block.get(field):
+                entries.append((str(bid), field, str(block[field])))
+        for field in ("title", "body", "text"):
+            value = str(block.get(field) or "")
+            match = re.match(r"^\\s*(リスク|ご判断いただきたい点|判断事項)\\s*[：:]", value)
+            if match:
+                repeated_labels.setdefault(match.group(1), []).append(str(bid))
+
+    for bid, field, value in entries:
+        stripped = value.strip()
+        location = {"slide": sid}
+        if bid != "slide":
+            location["block"] = bid
+        if re.match(r"^[|｜]\\s+", stripped):
+            issues.append({
+                **location, "severity": "error", "rule": "decorative-leading-bar",
+                "message": "Remove meaningless leading vertical bars in headings.",
+            })
+        if field == "title" and re.match(r"^(?:STEP\\s*)?0[1-9](?=\\s|[.．、:：])", stripped, re.I):
+            issues.append({
+                **location, "severity": "warning", "rule": "unnecessary-zero-padding",
+                "message": "Use 1, 2, 3 instead of 01, 02, 03 unless the number is meaningful.",
+            })
+        if "（別途ご相談）" in value or "（個別の状況による）" in value:
+            issues.append({
+                **location, "severity": "error", "rule": "unresolved-placeholder",
+                "message": "Replace vague hand-off text with responsible owner, next action and criteria.",
+            })
+        if any(x in value for x in ("代替ではなく伴走者", "価値を最大化", "シームレスに展開")):
+            issues.append({
+                **location, "severity": "warning", "rule": "generic-buzzword",
+                "message": "Replace generic slogans with actions, observable facts or decisions.",
+            })
+        if field == "footer" and len(stripped) > 120:
+            issues.append({
+                **location, "severity": "error", "rule": "overlong-footer",
+                "value": len(stripped),
+                "message": "Move long legal/source notes to a readable dedicated area or appendix.",
+            })
+        if re.search(r"[はがのをにへとでも]\\n", value):
+            issues.append({
+                **location, "severity": "warning", "rule": "suspicious-manual-linebreak",
+                "message": "Check whether this forced break separates a Japanese particle from its phrase.",
+            })
+
+    for label, bids in repeated_labels.items():
+        if len(bids) > 1:
+            issues.append({
+                "slide": sid, "severity": "warning", "rule": "repeated-column-label",
+                "value": {"label": label, "blocks": bids},
+                "message": "Move the shared label to a common axis or header.",
+            })
+
+    title = str(slide.get("title") or "")
+    if any(token in title for token in ("ご判断事項", "判断事項", "意思決定")):
+        all_text = " ".join(value for _, _, value in entries)
+        if not (("A案" in all_text and "B案" in all_text)
+                and any(token in all_text for token in ("推奨", "採用案", "選択理由"))):
+            issues.append({
+                "slide": sid, "severity": "warning", "rule": "decision-without-options",
+                "message": "A decision slide needs concrete alternatives and a reasoned recommendation.",
+            })
+
+    grid = slide.get("grid") or []
+    for row_number, row in enumerate(grid, start=1):
+        if not isinstance(row, list):
+            continue
+        ids = list(dict.fromkeys(str(x) for x in row))
+        heights = [
+            blocks[bid].get("height")
+            for bid in ids
+            if isinstance(blocks.get(bid), dict) and blocks[bid].get("height") is not None
+        ]
+        if len(heights) >= 2 and len(heights) == len(ids) and len({str(x) for x in heights}) > 1:
+            issues.append({
+                "slide": sid, "severity": "warning", "rule": "uneven-specified-card-heights",
+                "value": row_number,
+                "message": "Cards in the same row should have consistent visible height.",
+            })
+
+    return issues
 
 
 def lint_grid_spec(spec: dict[str, Any]) -> list[dict[str, Any]]:
@@ -67,6 +168,8 @@ def lint_grid_spec(spec: dict[str, Any]) -> list[dict[str, Any]]:
                     "rule": "empty-metric",
                     "message": "Metric blocks should visually prioritize a concrete value.",
                 })
+
+        issues.extend(_baseline_quality_checks(slide, sid))
 
         roles = [
             str(block.get("role") or "neutral")
