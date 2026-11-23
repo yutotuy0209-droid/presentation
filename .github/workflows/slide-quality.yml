@@ -1,0 +1,28 @@
+name: Slide minimum quality checks
+
+on:
+  push:
+    paths:
+      - "src/design_lint.py"
+      - "tests/test_design_lint.py"
+      - "docs/SLIDE_MINIMUM_QUALITY_GATE.md"
+      - ".github/workflows/slide-quality.yml"
+  pull_request:
+    paths:
+      - "src/design_lint.py"
+      - "tests/test_design_lint.py"
+      - "docs/SLIDE_MINIMUM_QUALITY_GATE.md"
+      - ".github/workflows/slide-quality.yml"
+
+jobs:
+  baseline-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test baseline quality detection
+        run: python tests/test_design_lint.py
+      - name: Lint example slide specification
+        run: python src/design_lint.py examples/grid_deck_glanceable.json
