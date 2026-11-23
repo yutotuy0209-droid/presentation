@@ -56,6 +56,35 @@ class DesignLintTests(unittest.TestCase):
         }
         self.assertEqual(lint_grid_spec(spec), [])
 
+    def test_baseline_errors_are_reported(self):
+        spec = {"slides": [{
+            "title": "｜ 判断事項",
+            "footer": "注意：" + "条件" * 70,
+            "blocks": {
+                "A": {"title": "01：リスク", "body": "（別途ご相談）"},
+                "B": {"title": "リスク：対策", "body": "価値を最大化"},
+                "C": {"title": "リスク：比較"},
+            },
+            "grid": [["A", "B", "C"]],
+        }]}
+        issues = lint_grid_spec(spec)
+        rules = {x["rule"] for x in issues}
+        self.assertIn("decorative-leading-bar", rules)
+        self.assertIn("unresolved-placeholder", rules)
+        self.assertIn("overlong-footer", rules)
+        self.assertIn("generic-buzzword", rules)
+        self.assertIn("unnecessary-zero-padding", rules)
+        self.assertIn("repeated-column-label", rules)
+        self.assertTrue(any(x["severity"] == "error" for x in issues))
+
+    def test_decision_without_comparison_warns(self):
+        spec = {"slides": [{
+            "title": "ご判断事項",
+            "blocks": {"A": {"type": "card", "body": "議論を進める"}},
+        }]}
+        rules = {x["rule"] for x in lint_grid_spec(spec)}
+        self.assertIn("decision-without-options", rules)
+
 
 if __name__ == "__main__":
     unittest.main()
