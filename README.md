@@ -6,6 +6,8 @@
 
 ## Current scope
 
+- AI生成スライドの文章・論理・デザインに関する厳格な品質基準：[プロ仕様スライド作成・AI臭排除プロンプト](docs/PROFESSIONAL_SLIDE_PROMPT.md)
+
 - Pythonで任意の非暗号化PPTXを素材・XML・編集用JSONへ展開し、未対応要素を保持して復元する：[PPTX_SOURCE_BUNDLE.md](docs/PPTX_SOURCE_BUNDLE.md)
 
 - HTML / CSS スライドのレンダリング
